@@ -1,12 +1,17 @@
-export default function DashboardLayout({
+import { SystemSidebar } from "@/components/system/sidebar/system-sidebar";
+import { auth } from "@clerk/nextjs/server";
+
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await auth.protect();
+
   return (
     <main id='dashboard-layout' className='w-screen h-screen flex overflow-hidden bg-rose-200'>
       {/* Sidebar */}
-      <aside className='w-45 bg-rose-400 h-full'>Sidebar</aside>
+      <SystemSidebar />
       {/* Section */}
       <section className='flex-1 flex flex-col bg-green-500'>
         <nav className='p-2 bg-purple-400 leading-3'>DashboardLayout</nav>

@@ -4,7 +4,9 @@
       "Bash(npx tsx:*)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Bash(pnpm typecheck:*)"
+      "Bash(pnpm typecheck:*)",
+      "WebFetch(domain:clerk.com)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []
