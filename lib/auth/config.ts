@@ -9,7 +9,7 @@ export const AUTH_CONFIG = {
   },
 
   TIMING: {
-    DEBOUNCE_MS: 3000,
+    DEBOUNCE_MS: 10000, // 10 segundos ao invés de 3
     REDIRECT_DELAY_MS: 1000,
     VERIFICATION_DELAY_MS: 1200,
   },

@@ -7,6 +7,11 @@ import { EmailLinkErrorCodeStatus, isEmailLinkError } from "@clerk/nextjs/errors
 import { AUTH_CONFIG, buildAbsoluteUrl } from "@/lib/auth/config";
 import type { VerificationStatus, VerificationCopy } from "@/lib/auth/types";
 
+// Interface para o retorno do handleEmailLinkVerification
+interface EmailLinkVerificationResult {
+  status?: "complete" | "needs_identifier" | "needs_factor_one" | "needs_factor_two";
+}
+
 const STATUS_COPY: Record<VerificationStatus, VerificationCopy> = {
   loading: {
     title: "Verificando link...",
@@ -49,7 +54,8 @@ export const useMagicLinkVerification = (): UseMagicLinkVerificationReturn => {
           redirectUrl: buildAbsoluteUrl(AUTH_CONFIG.ROUTES.SIGN_IN),
         });
 
-        if (result?.status === "complete") {
+        const typedResult = result as EmailLinkVerificationResult;
+        if (typedResult && typedResult.status === "complete") {
           setStatus("verified");
 
           setTimeout(() => {

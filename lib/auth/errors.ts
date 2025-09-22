@@ -5,12 +5,31 @@ export const parseAuthError = (error: unknown): string => {
   const authError = error as AuthError;
   const firstError = authError?.errors?.[0];
 
-  return (
+  let errorMessage = (
     firstError?.longMessage ||
     firstError?.message ||
     authError?.message ||
     AUTH_CONFIG.MESSAGES.ERROR.SEND_FAILED
   );
+
+  // Traduz erros comuns do inglês para português
+  const lowerMessage = errorMessage.toLowerCase();
+
+  if (lowerMessage.includes("too many requests")) {
+    errorMessage = "Muitas tentativas realizadas. Aguarde alguns minutos antes de tentar novamente.";
+  } else if (lowerMessage.includes("rate limit")) {
+    errorMessage = "Limite de tentativas excedido. Aguarde antes de tentar novamente.";
+  } else if (lowerMessage.includes("invalid email")) {
+    errorMessage = "Email inválido. Verifique o endereço e tente novamente.";
+  } else if (lowerMessage.includes("user not found")) {
+    errorMessage = "Usuário não encontrado.";
+  } else if (lowerMessage.includes("network") || lowerMessage.includes("connection")) {
+    errorMessage = "Problema de conexão. Verifique sua internet e tente novamente.";
+  } else if (lowerMessage.includes("server error")) {
+    errorMessage = "Erro no servidor. Tente novamente em alguns instantes.";
+  }
+
+  return errorMessage;
 };
 
 export const parseSignUpError = (error: unknown): string => {
@@ -31,7 +50,38 @@ export const getClerkErrorCode = (error: unknown): string | undefined => {
 };
 
 export const isUserNotFoundError = (error: unknown): boolean => {
-  return getClerkErrorCode(error) === "form_identifier_not_found";
+  const errorCode = getClerkErrorCode(error);
+  const userNotFoundCodes = [
+    "form_identifier_not_found",
+    "identifier_not_found",
+    "user_not_found",
+    "form_identifier_does_not_exist",
+    "identifier_does_not_exist"
+  ];
+
+  // Verifica por código de erro
+  if (userNotFoundCodes.includes(errorCode || "")) {
+    return true;
+  }
+
+  // Verifica por mensagem de erro como fallback
+  const authError = error as AuthError;
+  const errorMessage = (
+    authError?.errors?.[0]?.longMessage ||
+    authError?.errors?.[0]?.message ||
+    authError?.message ||
+    ""
+  ).toLowerCase();
+
+  const userNotFoundMessages = [
+    "identifier not found",
+    "user not found",
+    "does not exist",
+    "no user found",
+    "couldn't find your account"
+  ];
+
+  return userNotFoundMessages.some(msg => errorMessage.includes(msg));
 };
 
 export const validateEmail = (email: string, isDev: boolean): EmailValidationResult => {

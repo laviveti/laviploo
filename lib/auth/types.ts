@@ -26,6 +26,7 @@ export interface AuthState {
   codeSent: boolean;
   isSignUpFlow: boolean;
   verificationCode: string;
+  showRedirectOptions: boolean;
 }
 
 export interface AuthActions {
@@ -38,6 +39,8 @@ export interface AuthActions {
   setCodeSent: (sent: boolean) => void;
   setIsSignUpFlow: (isSignUp: boolean) => void;
   setVerificationCode: (code: string) => void;
+  goToSignUp: () => void;
+  goToSignIn: () => void;
   resetState: () => void;
 }
 
