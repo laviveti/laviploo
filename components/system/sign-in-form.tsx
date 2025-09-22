@@ -27,14 +27,23 @@ export const SignInForm = ({ className }: SignInFormProps) => {
     setMessage("");
 
     try {
-      await signIn?.create({
-        strategy: "email_link",
+      const result = await signIn?.create({
+        strategy: "email_code",
         identifier: email,
       });
 
-      setMessage("Link de acesso enviado para seu email!");
-    } catch (error) {
-      setMessage("Erro ao enviar link. Tente novamente.");
+      // Para email_code, precisamos ir para verificação
+      if (result?.status === "needs_first_factor") {
+        setMessage("Código enviado para seu email! Verifique sua caixa de entrada.");
+        // Aqui você poderia redirecionar para uma página de verificação
+        // ou mostrar um campo de código na mesma tela
+      } else {
+        setMessage("Link de acesso enviado para seu email!");
+      }
+    } catch (error: any) {
+      console.error("Magic link error:", error);
+      const errorMessage = error?.errors?.[0]?.longMessage || error?.message || "Erro ao enviar link. Tente novamente.";
+      setMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -47,14 +56,14 @@ export const SignInForm = ({ className }: SignInFormProps) => {
           <h1 className='text-2xl font-bold text-gray-900'>
             Entrar no <LogoText />
           </h1>
-          <p className='text-gray-600'>Digite seu email para receber um link de acesso</p>
+          <p className='text-gray-600'>Digite seu e-mail para receber um link de acesso</p>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
             <Input
               type='email'
-              placeholder='Digite seu e-mail com o domínio @lavive.com.br'
+              placeholder='O e-mail deve estar no domínio "lavive.com.br"'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className='w-full placeholder:text-xs'

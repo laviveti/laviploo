@@ -9,9 +9,11 @@ export default function PublicLayout({
     <main id='public-layout' className='w-screen h-screen flex overflow-hidden'>
       {/* Logo */}
       {/* <section className='w-6/9 flex flex-col justify-center items-center bg-gradient-to-br from-50% to-50% from-lavive to-purple-500'> */}
-      <section className='w-6/9 flex flex-col justify-center items-center bg-gradient-to-br from-rose-500 via-pink-400 to-purple-600'>
-        <div className='p-2 flex justify-center items-center rounded-2xl bg-white'>
+      {/* <section className='w-6/9 flex flex-col justify-center items-center bg-gradient-to-br from-20% via-60% from-rose-400 via-pink-300 to-purple-400'> */}
+      <section className='w-6/9 flex flex-col justify-center items-center bg-gradient-to-br from-40% from-lavive  to-purple-400'>
+        <div className='py-5 px-10 flex flex-col justify-center items-center rounded-2xl bg-white'>
           <LogoFull size='2xl' />
+          <h4 className='text-lavive font-bold leading-3 pt-1'>Visualize suas principais informações Ploomes!</h4>
         </div>
       </section>
       {/* Pages Section */}
