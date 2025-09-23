@@ -12,15 +12,15 @@ datasource db {
 
 // Better Auth required models
 model User {
-  id           String   @id @default(cuid())
-  name         String?
-  email        String   @unique
-  emailVerified Boolean @default(false)
-  image        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  sessions Session[]
+  sessions   Session[]
   magicLinks MagicLink[]
 
   @@map("users")
@@ -60,6 +60,7 @@ model Verification {
   value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([identifier, value])
   @@map("verifications")
