@@ -17,7 +17,8 @@
       "Bash(docker-compose up:*)",
       "Bash(docker-compose logs:*)",
       "Bash(docker exec:*)",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(del \"C:\\Users\\thiago.rocha\\Desktop\\projetos\\laviploo\\app\\icon.tsx\")"
     ],
     "deny": [],
     "ask": []
