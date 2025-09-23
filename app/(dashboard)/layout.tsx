@@ -1,12 +1,11 @@
 import { SystemSidebar } from "@/components/system/sidebar/system-sidebar";
-import { auth } from "@clerk/nextjs/server";
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await auth.protect();
+  // A proteção de rota agora é feita no middleware
 
   return (
     <main id='dashboard-layout' className='w-screen h-screen flex overflow-hidden bg-rose-200'>

@@ -6,7 +6,18 @@
       "mcp__context7__get-library-docs",
       "Bash(pnpm typecheck:*)",
       "WebFetch(domain:clerk.com)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx prisma:*)",
+      "Bash(findstr:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(pnpm dev:*)"
     ],
     "deny": [],
     "ask": []

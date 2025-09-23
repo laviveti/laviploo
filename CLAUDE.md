@@ -13,7 +13,7 @@ LaviPloo é uma plataforma de visualização de dados para a API do Ploomes, com
 - **Tabelas**: TanStack Table (fork Dice UI)
 - **Validação**: Zod
 - **Formulários**: React Hook Form
-- **Autenticação**: Clerk (apenas Magic Link)
+- **Autenticação**: Better Auth (apenas Magic Link)
 
 ## Paleta de Cores
 - **Primária**: #7e22ce (purple-700)
@@ -52,11 +52,31 @@ validations/ (Zod)
 - `PLOOOMES_API_KEY` - Chave de autenticação da API Ploomes
 
 ## Comandos de Desenvolvimento
-(Adicionar comandos aqui quando descobertos durante o desenvolvimento)
+```bash
+# Banco de Dados
+pnpm db:setup       # Configuração inicial automática
+pnpm db:reset       # Reset completo do banco
+pnpm db:start       # Inicia PostgreSQL
+pnpm db:stop        # Para containers
+pnpm db:studio      # Interface visual Prisma
+pnpm db:migrate     # Nova migração
+
+# Desenvolvimento
+pnpm dev           # Servidor de desenvolvimento
+pnpm build         # Build de produção
+pnpm typecheck     # Verificar TypeScript
+```
+
+## Documentação
+- **Documentação completa**: `/docs/README.md`
+- **Migração Better Auth**: `/docs/integrations/better-auth-migration.md`
+- **Setup Docker**: `/docs/integrations/docker-setup.md`
+- **API Ploomes**: `/docs/ploomes/api-ploomes-v2-documentation.md`
 
 ## Observações
 - Design totalmente responsivo obrigatório
 - Uso estrito do TypeScript
 - Consumo de API no client-side via hooks TanStack Query
 - Todas as chamadas de API externa através de endpoints locais do Next.js
-- rode comandos com pnpm
+- Rode comandos com pnpm
+- PostgreSQL via Docker (configuração automática)

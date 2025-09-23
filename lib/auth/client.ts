@@ -1,0 +1,15 @@
+"use client";
+
+import { createAuthClient } from "better-auth/client";
+import { magicLinkClient } from "better-auth/client/plugins";
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NODE_ENV === "production"
+    ? "https://your-domain.com"
+    : "http://localhost:3000",
+  plugins: [
+    magicLinkClient(),
+  ],
+});
+
+export { authClient as auth };

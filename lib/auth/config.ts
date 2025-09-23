@@ -1,10 +1,7 @@
 export const AUTH_CONFIG = {
   ROUTES: {
-    SIGN_IN: "/sign-in",
-    SIGN_UP: "/sign-up",
+    LOGIN: "/login",
     DASHBOARD: "/",
-    AFTER_SIGN_IN: "/",
-    AFTER_SIGN_UP: "/",
   },
 
   TIMING: {

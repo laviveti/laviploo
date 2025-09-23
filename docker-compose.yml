@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: laviploo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laviploo
+      POSTGRES_USER: laviploo
+      POSTGRES_PASSWORD: laviploo123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laviploo -d laviploo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - laviploo-network
+
+  prisma-migrate:
+    image: node:18-alpine
+    container_name: laviploo-prisma
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: "postgresql://laviploo:laviploo123@postgres:5432/laviploo?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "
+      npm install -g pnpm &&
+      pnpm install &&
+      npx prisma generate &&
+      npx prisma migrate deploy &&
+      echo 'Prisma migration completed successfully!'"
+    networks:
+      - laviploo-network
+
+volumes:
+  postgres_data:
+
+networks:
+  laviploo-network:
+    driver: bridge
