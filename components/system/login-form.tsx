@@ -56,7 +56,7 @@ export const LoginForm = ({ className }: LoginFormProps) => {
 
       updateState({
         codeSent: true,
-        message: "Link mágico enviado para seu email! Verifique sua caixa de entrada.",
+        message: "",
       });
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -90,7 +90,7 @@ export const LoginForm = ({ className }: LoginFormProps) => {
         throw new Error(error.message);
       }
 
-      updateState({ message: "Novo link mágico enviado para seu email!" });
+      updateState({ message: "" });
     } catch (error) {
       updateState({ message: getErrorMessage(error) });
     } finally {
@@ -112,7 +112,7 @@ export const LoginForm = ({ className }: LoginFormProps) => {
         </h1>
         <p className='text-gray-600'>
           {state.codeSent
-            ? `Enviamos um link mágico para ${state.email}! Clique no link para fazer login.`
+            ? ""
             : "Digite seu email para receber um link de acesso"}
         </p>
       </div>

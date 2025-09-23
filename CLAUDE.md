@@ -16,9 +16,10 @@ LaviPloo é uma plataforma de visualização de dados para a API do Ploomes, com
 - **Autenticação**: Better Auth (apenas Magic Link)
 
 ## Paleta de Cores
-- **Primária**: #7e22ce (purple-700)
-- **Secundária**: Cores Rose (#f43f5e para contraste)
-- **Uso**: Primária para ações principais, Rose para ações secundárias
+- **Primária**: Tons de Rosa (#f43f5e, rose-500)
+- **Secundária**: Tons de Zinc (neutros, para textos e fundos)
+- **Acento**: Cores Purple (#7e22ce para contraste)
+- **Uso**: Rosa para ações principais, Zinc para elementos neutros, Purple para destaques
 
 ## Estrutura do Projeto
 ```

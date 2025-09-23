@@ -33,44 +33,60 @@ O objetivo é construir uma plataforma para visualizar de forma agradável e fac
 
 #### 🎨 Paleta de Cores
 
-## **Primária (Base: \#7e22ce)**
+## **Primária (Base: \#f43f5e - Rosa)**
 
-  * **Primary-50**: `#f5e8fc` → fundos bem claros
-  * **Primary-100**: `#e9d0fa`
-  * **Primary-200**: `#d3a9f5`
-  * **Primary-300**: `#b87def`
-  * **Primary-400**: `#9b4de7`
-  * **Primary-500**: `#7e22ce` (base, bg-purple-700)
-  * **Primary-600**: `#6c1cae`
-  * **Primary-700**: `#5a188f`
-  * **Primary-800**: `#47136f`
-  * **Primary-900**: `#2f0c4b`
+  * **Primary-50**: `#fff1f2` → fundos bem claros
+  * **Primary-100**: `#ffe4e6`
+  * **Primary-200**: `#fecdd3`
+  * **Primary-300**: `#fda4af`
+  * **Primary-400**: `#fb7185`
+  * **Primary-500**: `#f43f5e` (base, bg-rose-500)
+  * **Primary-600**: `#e11d48`
+  * **Primary-700**: `#be123c`
+  * **Primary-800**: `#9f1239`
+  * **Primary-900**: `#831843`
 
-## **Rosa (rose) - Cores Secundárias (Complementares)**
+## **Zinc - Cores Secundárias (Neutros)**
 
-  * **Rose-50**: `#fff1f2`
-  * **Rose-100**: `#ffe4e6`
-  * **Rose-200**: `#fecdd3`
-  * **Rose-300**: `#fda4af`
-  * **Rose-400**: `#fb7185`
-  * **Rose-500**: `#f43f5e` (ponto de contraste)
-  * **Rose-600**: `#e11d48`
-  * **Rose-700**: `#be123c`
-  * **Rose-800**: `#9f1239`
-  * **Rose-900**: `#831843`
+  * **Zinc-50**: `#FAFAFA`
+  * **Zinc-100**: `#F4F4F5`
+  * **Zinc-200**: `#E4E4E7`
+  * **Zinc-300**: `#D4D4D8`
+  * **Zinc-400**: `#A1A1AA`
+  * **Zinc-500**: `#71717A`
+  * **Zinc-600**: `#52525B`
+  * **Zinc-700**: `#3F3F46`
+  * **Zinc-800**: `#27272A`
+  * **Zinc-900**: `#18181B`
+  * **Zinc-950**: `#09090B`
+
+## **Purple - Cores de Acento (Complementares)**
+
+  * **Purple-50**: `#f5e8fc`
+  * **Purple-100**: `#e9d0fa`
+  * **Purple-200**: `#d3a9f5`
+  * **Purple-300**: `#b87def`
+  * **Purple-400**: `#9b4de7`
+  * **Purple-500**: `#7e22ce` (ponto de contraste)
+  * **Purple-600**: `#6c1cae`
+  * **Purple-700**: `#5a188f`
+  * **Purple-800**: `#47136f`
+  * **Purple-900**: `#2f0c4b`
 
 ### 🖌️ Uso recomendado
 
   * **Backgrounds**
-      * Neutros: `Primary-50`, `Primary-100`, `Rose-50`, `Rose-100`
-      * Áreas de destaque: `Primary-500`, `Rose-500`
-      * Hover: `Primary-600`, `Rose-600`
+      * Neutros: `Zinc-50`, `Zinc-100`, `Zinc-200` (fundos principais)
+      * Áreas de destaque: `Primary-500` (rosa), `Purple-500` (acento)
+      * Hover: `Primary-600`, `Purple-600`, `Zinc-600`
   * **Textos**
-      * Em fundos claros: `Primary-700`, `Rose-700`, ou `#1a1a1a` (neutro)
-      * Em fundos escuros: `Primary-50`, `Rose-50`, ou `#ffffff`
+      * Em fundos claros: `Zinc-700`, `Zinc-800`, `Zinc-900` (textos principais)
+      * Em fundos escuros: `Zinc-50`, `Zinc-100`, `Zinc-200`
+      * Títulos e destaques: `Primary-700` (rosa), `Purple-700` (acento)
   * **Botões / CTA**
-      * Primário: `bg-primary-500 text-white hover:bg-primary-600`
-      * Secundário: `bg-rose-500 text-white hover:bg-rose-600`
+      * Primário: `bg-rose-500 text-white hover:bg-rose-600`
+      * Secundário: `bg-zinc-500 text-white hover:bg-zinc-600`
+      * Acento: `bg-purple-500 text-white hover:bg-purple-600`
   * **Responsividade:**
     A interface deve ser **totalmente responsiva**, garantindo uma experiência consistente em desktop, tablet e mobile.
 
