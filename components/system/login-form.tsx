@@ -30,7 +30,7 @@ export const LoginForm = ({ className }: LoginFormProps) => {
   });
 
   const updateState = (updates: Partial<AuthFormState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState((prev) => ({ ...prev, ...updates }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,8 +100,8 @@ export const LoginForm = ({ className }: LoginFormProps) => {
 
   return (
     <div className={cn("w-full space-y-6", className)}>
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className='text-center space-y-2'>
+        <h1 className='text-2xl font-bold text-gray-900'>
           {state.codeSent ? (
             "Verifique seu email"
           ) : (
@@ -110,77 +110,61 @@ export const LoginForm = ({ className }: LoginFormProps) => {
             </>
           )}
         </h1>
-        <p className="text-gray-600">
+        <p className='text-gray-600'>
           {state.codeSent
             ? `Enviamos um link mágico para ${state.email}! Clique no link para fazer login.`
             : "Digite seu email para receber um link de acesso"}
         </p>
       </div>
 
-        {state.codeSent ? (
-          <div className="space-y-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-green-800 text-sm mb-3">
-                ✅ Link enviado com sucesso!
-              </p>
-              <p className="text-green-700 text-xs">
-                Verifique sua caixa de entrada e clique no link para acessar sua conta.
-              </p>
+      {state.codeSent ? (
+        <div className='space-y-4'>
+          <div className='text-center p-4 bg-green-50 rounded-lg border border-green-200'>
+            <p className='text-green-800 text-sm mb-3'>✅ Link enviado com sucesso!</p>
+            <p className='text-green-700 text-xs mb-2'>Verifique sua caixa de entrada e clique no link para acessar sua conta.</p>
+            <div className='bg-yellow-50 border border-yellow-200 rounded p-2 mt-2'>
+              <p className='text-yellow-800 text-xs'>⏱️ Este link expira em 5 minutos por motivos de segurança.</p>
+              <p className='text-yellow-700 text-xs mt-1'>Não recebeu o email? Verifique sua pasta de spam ou lixo eletrônico.</p>
             </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleResendMagicLink}
-              disabled={state.isLoading}
-            >
-              {state.isLoading ? "Enviando..." : "Reenviar Link"}
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={resetForm}
-              disabled={state.isLoading}
-            >
-              Usar outro email
-            </Button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              placeholder={getEmailPlaceholder()}
-              value={state.email}
-              onChange={(e) => updateState({ email: e.target.value })}
-              className="w-full placeholder:text-xs"
-              disabled={state.isLoading}
-            />
 
-            <Button
-              type="submit"
-              className="w-full bg-lavive hover:bg-lavive/90"
-              disabled={state.isLoading}
-            >
-              {state.isLoading ? "Enviando..." : "Enviar Link de Acesso"}
-            </Button>
-          </form>
-        )}
+          <div className='text-center text-xs text-gray-500'>
+            <p>
+              Enviado para: <span className='font-medium'>{state.email}</span>
+            </p>
+          </div>
 
-        {state.message && (
-          <p className={cn("text-sm text-center", getMessageClassName(state.message))}>
-            {state.message}
-          </p>
-        )}
+          <Button type='button' variant='outline' className='w-full' onClick={handleResendMagicLink} disabled={state.isLoading}>
+            {state.isLoading ? "Enviando..." : "Reenviar Link"}
+          </Button>
 
-        {/* Mensagem informativa */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-zinc-600">
-            Acesso exclusivo para usuários autorizados
-          </p>
+          <Button type='button' variant='ghost' className='w-full' onClick={resetForm} disabled={state.isLoading}>
+            Usar outro email
+          </Button>
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <Input
+            type='email'
+            placeholder={getEmailPlaceholder()}
+            value={state.email}
+            onChange={(e) => updateState({ email: e.target.value })}
+            className='w-full placeholder:text-xs'
+            disabled={state.isLoading}
+          />
+
+          <Button type='submit' className='w-full bg-lavive hover:bg-lavive/90' disabled={state.isLoading}>
+            {state.isLoading ? "Enviando..." : "Enviar Link de Acesso"}
+          </Button>
+        </form>
+      )}
+
+      {state.message && <p className={cn("text-sm text-center", getMessageClassName(state.message))}>{state.message}</p>}
+
+      {/* Mensagem informativa */}
+      <div className='text-center mt-6'>
+        <p className='text-sm text-zinc-600'>Acesso exclusivo para usuários autorizados</p>
+      </div>
     </div>
   );
 };
