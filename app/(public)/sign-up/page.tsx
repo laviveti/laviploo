@@ -1,4 +1,4 @@
-import { SignInForm } from "@/components/system/sign-in-form";
+import { SignUpForm } from "@/components/system/sign-up-form";
 import { LogoFull } from "@/components/system/logo";
 
 export default function SignUpPage() {
@@ -10,7 +10,7 @@ export default function SignUpPage() {
       </div>
       {/* Form */}
       <div className='flex-1 flex pt-8 justify-center px-4'>
-        <SignInForm />
+        <SignUpForm />
       </div>
       {/* Footer */}
       <footer className='justify-center p-2 flex'>

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSignIn } from "@clerk/nextjs";
+import { useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
-import type { EmailCodeFactor } from "@clerk/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +14,10 @@ import { getErrorMessage, getMessageClassName } from "@/lib/handle-error";
 import { useEmailValidation } from "@/hooks/use-email-validation";
 import type { AuthFormState } from "@/types/auth";
 
-interface SignInFormProps extends React.ComponentProps<"div"> {}
+interface SignUpFormProps extends React.ComponentProps<"div"> {}
 
-export const SignInForm = ({ className }: SignInFormProps) => {
-  const { isLoaded, signIn, setActive } = useSignIn();
+export const SignUpForm = ({ className }: SignUpFormProps) => {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const { validateEmail, getEmailPlaceholder } = useEmailValidation();
   const router = useRouter();
 
@@ -49,33 +48,26 @@ export const SignInForm = ({ className }: SignInFormProps) => {
     updateState({ isLoading: true, message: "" });
 
     try {
-      const signInAttempt = await signIn.create({
-        identifier: state.email,
+      // Cria a conta usando apenas o email (sem senha)
+      await signUp.create({
+        emailAddress: state.email,
       });
 
-      const emailCodeFactor = signInAttempt.supportedFirstFactors?.find(
-        (factor): factor is EmailCodeFactor => factor.strategy === "email_code"
-      );
+      // Prepara a verificação do email enviando o código
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
 
-      if (emailCodeFactor) {
-        await signInAttempt.prepareFirstFactor({
-          strategy: "email_code",
-          emailAddressId: emailCodeFactor.emailAddressId,
-        });
-
-        updateState({
-          codeSent: true,
-          message: "Código de verificação enviado para seu email!",
-        });
-      } else {
-        throw new Error("Verificação por email não está disponível");
-      }
+      updateState({
+        codeSent: true,
+        message: "Conta criada! Código de verificação enviado para seu email.",
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       updateState({ message: errorMessage });
 
-      // Mostra opções de redirecionamento para usuários não encontrados
-      if (errorMessage.includes("não existe")) {
+      // Mostra opções de redirecionamento se usuário já existe
+      if (errorMessage.includes("já existe")) {
         setTimeout(() => {
           updateState({ showRedirectOptions: true });
         }, 3000);
@@ -96,20 +88,32 @@ export const SignInForm = ({ className }: SignInFormProps) => {
     updateState({ isLoading: true, message: "" });
 
     try {
-      const signInAttempt = await signIn.attemptFirstFactor({
-        strategy: "email_code",
+      // Tenta verificar o código
+      const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code: state.code,
       });
 
-      if (signInAttempt.status === "complete") {
-        await setActive({ session: signInAttempt.createdSessionId });
-        updateState({ message: "Login realizado com sucesso!" });
+      // Se a verificação foi completa, ativa a sessão e redireciona
+      if (signUpAttempt.status === "complete") {
+        await setActive({
+          session: signUpAttempt.createdSessionId,
+          navigate: async ({ session }) => {
+            if (session?.currentTask) {
+              // Se há tarefas pendentes, lida com elas
+              console.log("Session tasks:", session.currentTask);
+              return;
+            }
 
-        setTimeout(() => {
-          router.push(AUTH_CONFIG.ROUTES.DASHBOARD);
-        }, 1000);
+            // Redireciona para o dashboard
+            await router.push(AUTH_CONFIG.ROUTES.DASHBOARD);
+          }
+        });
+
+        updateState({ message: "Conta criada e login realizado com sucesso!" });
       } else {
-        updateState({ message: "Falha na verificação. Tente novamente." });
+        // Se o status não é complete, verifica o que precisa ser feito
+        console.log("Sign-up não completo. Status:", signUpAttempt.status);
+        updateState({ message: "Verificação não completada. Tente novamente." });
       }
     } catch (error) {
       updateState({ message: getErrorMessage(error) });
@@ -124,18 +128,12 @@ export const SignInForm = ({ className }: SignInFormProps) => {
     updateState({ isLoading: true, message: "" });
 
     try {
-      const emailCodeFactor = signIn?.supportedFirstFactors?.find(
-        (factor): factor is EmailCodeFactor => factor.strategy === "email_code"
-      );
+      // Prepara novamente a verificação do email
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
 
-      if (emailCodeFactor) {
-        await signIn?.prepareFirstFactor({
-          strategy: "email_code",
-          emailAddressId: emailCodeFactor.emailAddressId,
-        });
-
-        updateState({ message: "Novo código enviado para seu email!" });
-      }
+      updateState({ message: "Novo código enviado para seu email!" });
     } catch (error) {
       updateState({ message: getErrorMessage(error) });
     } finally {
@@ -163,14 +161,14 @@ export const SignInForm = ({ className }: SignInFormProps) => {
               "Verifique seu email"
             ) : (
               <>
-                Entrar no <LogoText />
+                Criar conta no <LogoText />
               </>
             )}
           </h1>
           <p className="text-gray-600">
             {state.codeSent
               ? `Enviamos um código de verificação para ${state.email}!`
-              : "Digite seu email para receber um código de verificação"}
+              : "Digite seu email para criar sua conta"}
           </p>
         </div>
 
@@ -231,7 +229,7 @@ export const SignInForm = ({ className }: SignInFormProps) => {
               className="w-full bg-lavive hover:bg-lavive/90"
               disabled={state.isLoading}
             >
-              {state.isLoading ? "Enviando..." : "Enviar Código de Verificação"}
+              {state.isLoading ? "Criando conta..." : "Criar Conta"}
             </Button>
 
             {/* Clerk CAPTCHA container */}
@@ -249,15 +247,15 @@ export const SignInForm = ({ className }: SignInFormProps) => {
         {state.showRedirectOptions && (
           <div className="text-center mt-4 p-4 bg-zinc-50 rounded-lg border">
             <p className="text-sm text-zinc-700 mb-3">
-              Não conseguiu fazer login? Talvez você precise criar uma conta.
+              Não conseguiu criar conta? Talvez você já tenha uma conta.
             </p>
             <div className="space-y-2">
               <Button
                 type="button"
-                onClick={() => router.push(AUTH_CONFIG.ROUTES.SIGN_UP)}
+                onClick={() => router.push(AUTH_CONFIG.ROUTES.SIGN_IN)}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white"
               >
-                Criar uma conta
+                Fazer login
               </Button>
               <Button
                 type="button"
@@ -271,13 +269,13 @@ export const SignInForm = ({ className }: SignInFormProps) => {
           </div>
         )}
 
-        {/* Link para alternar para sign-up */}
+        {/* Link para alternar para sign-in */}
         <div className="text-center mt-6">
           <Link
-            href={AUTH_CONFIG.ROUTES.SIGN_UP}
+            href={AUTH_CONFIG.ROUTES.SIGN_IN}
             className="text-sm text-zinc-600 hover:text-zinc-900 underline"
           >
-            Não tem uma conta? Crie uma
+            Já tem uma conta? Faça login
           </Link>
         </div>
       </div>

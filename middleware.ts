@@ -4,11 +4,12 @@ import { AUTH_CONFIG } from "@/lib/auth/config";
 
 const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
+  "/sign-up(.*)",
   "/api/webhooks(.*)",
 ]);
 
 const isProtectedRoute = createRouteMatcher([
-  "/((?!sign-in|api).*)",
+  "/((?!sign-in|sign-up|api).*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -27,8 +28,8 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Redirect authenticated users from sign-in to dashboard
-  if (userId && req.nextUrl.pathname.startsWith(AUTH_CONFIG.ROUTES.SIGN_IN)) {
+  // Redirect authenticated users from sign-in/sign-up to dashboard
+  if (userId && (req.nextUrl.pathname.startsWith(AUTH_CONFIG.ROUTES.SIGN_IN) || req.nextUrl.pathname.startsWith(AUTH_CONFIG.ROUTES.SIGN_UP))) {
     const dashboardUrl = new URL(AUTH_CONFIG.ROUTES.DASHBOARD, req.url);
     return NextResponse.redirect(dashboardUrl);
   }
