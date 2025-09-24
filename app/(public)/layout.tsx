@@ -8,7 +8,7 @@ export default function PublicLayout({
   return (
     <main id='public-layout' className='w-screen h-screen flex overflow-hidden'>
       {/* Logo */}
-      <section className='w-6/9 flex flex-col justify-center items-center bg-gradient-to-br from-50% from-lavive  to-purple-400'>
+      <section className='w-6/9 flex flex-col justify-center items-center laviploo-gradient'>
         <div className='py-5 px-10 flex flex-col justify-center items-center rounded-2xl bg-white'>
           <LogoFull size='2xl' />
           <h4 className='text-lavive font-bold leading-3 pt-1'>

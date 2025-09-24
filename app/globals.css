@@ -121,3 +121,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* LaviPloo Gradients - Rose to Purple variations */
+  .laviploo-gradient-light {
+    @apply bg-gradient-to-br from-50% from-rose-300 to-purple-300;
+  }
+
+  .laviploo-gradient-soft {
+    @apply bg-gradient-to-br from-50% from-rose-400 to-purple-300;
+  }
+
+  .laviploo-gradient {
+    @apply bg-gradient-to-br from-50% from-lavive to-purple-400;
+  }
+
+  .laviploo-gradient-deep {
+    @apply bg-gradient-to-br from-50% from-rose-600 to-purple-500;
+  }
+
+  .laviploo-gradient-dark {
+    @apply bg-gradient-to-br from-50% from-rose-700 to-purple-600;
+  }
+}
+

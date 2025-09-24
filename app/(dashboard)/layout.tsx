@@ -1,20 +1,34 @@
 import { SystemSidebar } from "@/components/system/sidebar/system-sidebar";
+import { SystemHeader } from "@/components/system/header/system-header";
+import { auth } from "@/lib/auth/better-auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // A proteção de rota agora é feita no middleware
+  // Verifica se o usuário está autenticado
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/login");
+  }
 
   return (
     <main id='dashboard-layout' className='w-screen h-screen flex overflow-hidden bg-rose-200'>
       {/* Sidebar */}
       <SystemSidebar />
       {/* Section */}
-      <section className='flex-1 flex flex-col bg-green-500'>
-        <nav className='p-2 bg-purple-400 leading-3'>LayoutHeader</nav>
-        <div className='flex-1 bg-amber-300 overflow-x-hidden overflow-y-auto p-2'>{children}</div>
+      <section className='flex-1 flex flex-col'>
+        {/* <nav className='p-2 bg-gradient-to-r from-purple-400 to-lavive to-40% leading-3'> */}
+        <nav className='p-2 bg-lavive leading-3'>
+          <SystemHeader />
+        </nav>
+        <div className='flex-1 laviploo-gradient-soft overflow-x-hidden overflow-y-auto p-2'>{children}</div>
       </section>
     </main>
   );

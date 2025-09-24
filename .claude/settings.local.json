@@ -19,7 +19,8 @@
       "Bash(docker exec:*)",
       "Bash(pnpm dev:*)",
       "Bash(del \"C:\\Users\\thiago.rocha\\Desktop\\projetos\\laviploo\\app\\icon.tsx\")",
-      "Bash(pnpm prisma generate:*)"
+      "Bash(pnpm prisma generate:*)",
+      "Bash(pnpm db:migrate:*)"
     ],
     "deny": [],
     "ask": []

@@ -46,7 +46,7 @@ export const BehaviorList = ({ behaviors }: BehaviorListProps) => {
           </TableHeader>
           <TableBody>
             {behaviors.map((behavior) => (
-              <TableRow key={behavior.id}>
+              <TableRow key={`${behavior.integrationName}-${behavior.id}`}>
                 <TableCell className="font-medium">
                   {behavior.name}
                 </TableCell>

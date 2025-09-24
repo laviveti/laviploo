@@ -1,11 +1,13 @@
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, multiSession } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import nodemailer from "nodemailer";
 import { getEmailValidationRegex } from "./config";
+import { createAuthMiddleware } from "better-auth/api";
 
 const prisma = new PrismaClient();
+
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -14,7 +16,43 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: false, // Desabilita login com senha
   },
+  user: {
+    additionalFields: {
+      name: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      // Hook executado após magic link verification bem-sucedida
+      if (ctx.path === "/magic-link/verify" && ctx.context.newSession) {
+        const newSession = ctx.context.newSession;
+        const user = newSession.user;
+
+        // Se o usuário não tem nome, gera um baseado no email
+        if (!user.name && user.email) {
+          const emailPrefix = user.email.split('@')[0];
+          const nameFromEmail = emailPrefix
+            .split('.')
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+
+          // Atualiza o usuário com o nome gerado
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { name: nameFromEmail }
+          });
+        }
+      }
+    }),
+  },
   plugins: [
+    // Plugin nativo para múltiplas sessões e device trust
+    multiSession({
+      maximumSessions: 5 // Máximo 5 sessões por usuário
+    }),
     magicLink({
       sendMagicLink: async ({ email, token, url }, request) => {
         try {
@@ -30,9 +68,8 @@ export const auth = betterAuth({
             throw new Error(errorMessage);
           }
 
-          // Log para depuração
           console.log("Enviando magic link para:", email);
-          console.log("URL:", url);
+          console.log("Magic link URL:", url);
 
           const mailHost = process.env.MAIL_HOST;
           const mailPort = parseInt(process.env.MAIL_PORT || "465");
@@ -189,8 +226,12 @@ export const auth = betterAuth({
     }),
   ],
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 dias
+    expiresIn: 60 * 60 * 24 * 30, // 30 dias (equivalente ao rememberMe)
     updateAge: 60 * 60 * 24, // 1 dia
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24 * 7 // Cache por 7 dias para performance
+    }
   },
   trustedOrigins: ["http://localhost:3000"],
 });
