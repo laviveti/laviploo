@@ -81,3 +81,10 @@ pnpm typecheck     # Verificar TypeScript
 - Todas as chamadas de API externa através de endpoints locais do Next.js
 - Rode comandos com pnpm
 - PostgreSQL via Docker (configuração automática)
+
+## Diretrizes de Desenvolvimento
+### Scripts de Teste
+- **Por padrão**: Excluir todos os scripts de teste após desenvolvimento/debugging
+- **Exceções**: Scripts essenciais para deploy, migração ou operações críticas
+- **Localização**: Diretório `scripts/` deve permanecer limpo em produção
+- **Limpeza**: Remover arquivos temporários de teste antes de commits finais
