@@ -13,8 +13,8 @@ export default async function DashboardLayout({
       <SystemSidebar />
       {/* Section */}
       <section className='flex-1 flex flex-col bg-green-500'>
-        <nav className='p-2 bg-purple-400 leading-3'>DashboardLayout</nav>
-        <div className='flex-1 bg-amber-300 p-2'>{children}</div>
+        <nav className='p-2 bg-purple-400 leading-3'>LayoutHeader</nav>
+        <div className='flex-1 bg-amber-300 overflow-x-hidden overflow-y-auto p-2'>{children}</div>
       </section>
     </main>
   );
