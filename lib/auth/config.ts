@@ -53,8 +53,8 @@ export const AUTH_CONFIG = {
 
 export const getEmailValidationRegex = (isDev: boolean) => {
   const patterns = {
-    lavive: /^[^\s@]+@lavive\.com\.br$/,
-    gmail: /^[^\s@]+@gmail\.com$/,
+    lavive: /^[^\s@]+@lavive\.com\.br$/i, // Case insensitive
+    gmail: /^[^\s@]+@gmail\.com$/i, // Case insensitive
   };
 
   return isDev ? [patterns.lavive, patterns.gmail] : [patterns.lavive];

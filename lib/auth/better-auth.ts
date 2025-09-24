@@ -3,6 +3,7 @@ import { magicLink } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import nodemailer from "nodemailer";
+import { getEmailValidationRegex } from "./config";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,18 @@ export const auth = betterAuth({
     magicLink({
       sendMagicLink: async ({ email, token, url }, request) => {
         try {
+          // Validação de domínio de email no servidor
+          const isDev = process.env.NODE_ENV === "development";
+          const emailPatterns = getEmailValidationRegex(isDev);
+          const isValidEmail = emailPatterns.some(pattern => pattern.test(email));
+
+          if (!isValidEmail) {
+            const errorMessage = isDev
+              ? "Email deve ser do domínio @lavive.com.br ou Gmail (modo desenvolvimento)"
+              : "Email deve ser do domínio @lavive.com.br";
+            throw new Error(errorMessage);
+          }
+
           // Log para depuração
           console.log("Enviando magic link para:", email);
           console.log("URL:", url);
