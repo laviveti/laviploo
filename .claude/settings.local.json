@@ -18,7 +18,8 @@
       "Bash(docker-compose logs:*)",
       "Bash(docker exec:*)",
       "Bash(pnpm dev:*)",
-      "Bash(del \"C:\\Users\\thiago.rocha\\Desktop\\projetos\\laviploo\\app\\icon.tsx\")"
+      "Bash(del \"C:\\Users\\thiago.rocha\\Desktop\\projetos\\laviploo\\app\\icon.tsx\")",
+      "Bash(pnpm prisma generate:*)"
     ],
     "deny": [],
     "ask": []
