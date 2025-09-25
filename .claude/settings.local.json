@@ -20,7 +20,9 @@
       "Bash(pnpm dev:*)",
       "Bash(del \"C:\\Users\\thiago.rocha\\Desktop\\projetos\\laviploo\\app\\icon.tsx\")",
       "Bash(pnpm prisma generate:*)",
-      "Bash(pnpm db:migrate:*)"
+      "Bash(pnpm db:migrate:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

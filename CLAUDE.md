@@ -72,7 +72,7 @@ pnpm typecheck     # Verificar TypeScript
 - **Documentação completa**: `/docs/README.md`
 - **Migração Better Auth**: `/docs/integrations/better-auth-migration.md`
 - **Setup Docker**: `/docs/integrations/docker-setup.md`
-- **API Ploomes**: `/docs/ploomes/api-ploomes-v2-documentation.md`
+- **API Ploomes**: MCP Context7: `API Ploomes V2` (usar `/docs/ploomes/api-ploomes-v2-documentation.md` em último caso)
 
 ## Observações
 - Design totalmente responsivo obrigatório
@@ -88,3 +88,9 @@ pnpm typecheck     # Verificar TypeScript
 - **Exceções**: Scripts essenciais para deploy, migração ou operações críticas
 - **Localização**: Diretório `scripts/` deve permanecer limpo em produção
 - **Limpeza**: Remover arquivos temporários de teste antes de commits finais
+
+### Preferências de Design/UI
+- **Estilo compacto**: Preferência por elementos com espaçamento e arredondamento menores para design mais sucinto
+- **Padding/Spacing**: Usar tamanhos reduzidos (px-2, py-2, gap-2) ao invés de padrões maiores (px-3, py-3, gap-3)
+- **Border Radius**: Preferir `rounded-md` ao invés de `rounded-lg` para cantos menos arredondados
+- **Ícones**: Usar tamanhos menores (h-4 w-4) para manter consistência com o estilo compacto
