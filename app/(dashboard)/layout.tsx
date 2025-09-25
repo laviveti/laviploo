@@ -25,10 +25,10 @@ export default async function DashboardLayout({
       {/* Section */}
       <section className='flex-1 flex flex-col'>
         {/* <nav className='p-2 bg-gradient-to-r from-purple-400 to-lavive to-40% leading-3'> */}
-        <nav className='p-2 bg-lavive leading-3'>
+        <nav className='py-1 px-3 bg-gradient-to-r from-lavive to-rose-500 leading-3'>
           <SystemHeader />
         </nav>
-        <div className='flex-1 laviploo-gradient-soft overflow-x-hidden overflow-y-auto p-2'>{children}</div>
+        <div className='flex-1 overflow-x-hidden overflow-y-auto'>{children}</div>
       </section>
     </main>
   );

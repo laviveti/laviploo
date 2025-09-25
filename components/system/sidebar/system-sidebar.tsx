@@ -12,7 +12,7 @@ export const SystemSidebar = ({ className }: SystemSidebarProps) => {
   const { signOut } = useAuth();
 
   return (
-    <aside className={cn("w-45 flex flex-col px-0.5 py-2 bg-gradient-to-b from-lavive to-purple-400 from-50%  h-full", className)}>
+    <aside className={cn("w-45 flex flex-col px-0.5 py-2 bg-gradient-to-b from-lavive to-rose-600 h-full", className)}>
       {/* Sidebar */}
       <div className='bg-white p-1 px-4 flex items-center justify-center self-center rounded-md w-fit h-fit'>
         <LogoFull size='md' />

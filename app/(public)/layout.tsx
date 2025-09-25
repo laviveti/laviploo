@@ -1,10 +1,21 @@
 import { LogoFull } from "@/components/system/logo";
+import { auth } from "@/lib/auth/better-auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (session) {
+    redirect("/");
+  }
+
   return (
     <main id='public-layout' className='w-screen h-screen flex overflow-hidden'>
       {/* Logo */}

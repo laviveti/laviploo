@@ -40,7 +40,7 @@ export const UserDropdown = ({ className }: UserDropdownProps) => {
   const handleSignOut = async () => {
     try {
       // Salva token trusted device para silent reauthentication
-      if (typeof document !== 'undefined' && user?.email) {
+      if (typeof document !== "undefined" && user?.email) {
         const trustedToken = `trusted_${Date.now()}_${Math.random().toString(36)}`;
         const trustedDeviceData = {
           email: user.email,
@@ -66,7 +66,7 @@ export const UserDropdown = ({ className }: UserDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' className='h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white font-semibold' size='sm'>
+        <Button variant='ghost' className='h-8 w-8 rounded-full bg-white hover:bg-white/90 text-rose-400 hover:text-rose-400  font-semibold' size='sm'>
           {getUserInitials(user.email)}
         </Button>
       </DropdownMenuTrigger>
