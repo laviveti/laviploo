@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon, Triangle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,18 +51,15 @@ export const Hint: React.FC<HintProps> = ({ content, children, side, align, trig
   return (
     <TooltipProvider>
       <Tooltip delayDuration={50} open={props.open}>
-        <div className='group'>
-          <TooltipTrigger asChild className={cn(triggerClassName)}>
-            {children}
-          </TooltipTrigger>
-          <TooltipContent
+        <TooltipTrigger asChild className={cn(triggerClassName)}>
+          {children}
+        </TooltipTrigger>
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Content
             sideOffset={props.sideOffset}
             side={side}
             align={align}
-            className={cn(
-              "ml-1 items-center gap-0 overflow-visible border-0 bg-transparent p-0 text-xs leading-3 text-white opacity-0 shadow-none group-hover:opacity-100"
-              // contentClassName,
-            )}>
+            className={cn("z-10 bg-transparent border-0 p-0 shadow-none overflow-visible", contentClassName)}>
             {!React.isValidElement(content) ? (
               <div
                 className={cn("relative flex items-center", {
@@ -79,16 +77,16 @@ export const Hint: React.FC<HintProps> = ({ content, children, side, align, trig
                       "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
                       "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
                     },
-                    getTriangleColor(contentClassName, triangleClassName) // 🆕 ÚNICA MUDANÇA: sincronismo de cores
+                    getTriangleColor(contentClassName, triangleClassName)
                   )}
                 />
-                <p className={cn("rounded-xs bg-rose-400 px-1 py-0.5 text-xs font-medium", contentClassName)}>{content}</p>
+                <p className={cn("rounded-xs bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
               </div>
             ) : (
               content
             )}
-          </TooltipContent>
-        </div>
+          </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
       </Tooltip>
     </TooltipProvider>
   );

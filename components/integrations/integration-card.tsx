@@ -100,12 +100,11 @@ export const IntegrationCard = ({ integration }: IntegrationCardProps) => {
               <span className='text-sm font-medium text-zinc-700'>Campos de configuração ({integration.fields.length}):</span>
               <div className='flex flex-wrap w-full overflow-hidden gap-1'>
                 {integration.fields.slice(0, 3).map((field) => (
-                  <Hint content={field.name} side='bottom' key={field.id}>
-                    <div>
+                  <Hint content={field.name} contentClassName='max-w-80 pointer-events-none' align='start' side='bottom' key={field.id}>
+                    <div className='group relative'>
                       <Badge
                         variant='outline'
-                        // className={`text-xs w-full justify-start line-clamp-1 border-zinc-300 bg-zinc-50 ${field.required ? "text-orange-600 border-orange-300" : "text-zinc-600"}`}>
-                        className={`text-xs  truncate border-zinc-300 bg-zinc-50 ${field.required ? "text-orange-600 border-orange-300" : "text-zinc-600"}`}>
+                        className={`text-xs truncate border-zinc-300 bg-zinc-50 ${field.required ? "text-orange-600 border-orange-300" : "text-zinc-600"}`}>
                         {field.name}
                         {field.required && "*"}
                       </Badge>
