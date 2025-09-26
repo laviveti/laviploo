@@ -106,15 +106,44 @@ function transformPloomesAutomation(ploomesAutomation: PloomesAutomation): Autom
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '1000');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const skip = parseInt(url.searchParams.get('skip') || '0');
     const expand = url.searchParams.get('expand') === 'true';
     const entityFilter = url.searchParams.get('entity');
     const statusFilter = url.searchParams.get('status');
+    const search = url.searchParams.get('search');
+    const createdBy = url.searchParams.get('createdBy');
+    const dateFrom = url.searchParams.get('dateFrom');
+    const dateTo = url.searchParams.get('dateTo');
 
-    // Build automations query
-    let automationsQuery = `Automations?$top=${limit}&$orderby=CreateDate desc`;
+    // Build automations query with OData parameters
+    let automationsQuery = `Automations?$top=${limit}&$skip=${skip}&$orderby=CreateDate desc`;
+
     if (expand) {
       automationsQuery += '&$expand=Entity,Trigger,Actions,Creator';
+    }
+
+    // Build OData $filter conditions
+    const filterConditions: string[] = [];
+
+    if (entityFilter) {
+      filterConditions.push(`EntityId eq ${entityFilter}`);
+    }
+
+    if (search) {
+      filterConditions.push(`contains(tolower(Name), tolower('${search.replace(/'/g, "''")}')}`);
+    }
+
+    if (dateFrom) {
+      filterConditions.push(`CreateDate ge ${dateFrom}T00:00:00Z`);
+    }
+
+    if (dateTo) {
+      filterConditions.push(`CreateDate le ${dateTo}T23:59:59Z`);
+    }
+
+    if (filterConditions.length > 0) {
+      automationsQuery += `&$filter=${filterConditions.join(' and ')}`;
     }
 
     // Fetch all data in parallel
