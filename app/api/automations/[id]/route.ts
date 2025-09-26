@@ -12,6 +12,7 @@ import {
   getTriggerName,
   interpretFilterField,
   groupFilterCriteria,
+  analyzeFilterLogic,
   parseODataFilter,
   type InterpretedFilterCriteria
 } from "@/lib/ploomes-mappings";
@@ -83,6 +84,11 @@ function interpretComplexFilter(filterDetails: any, fieldDetailsMap: Map<string,
   filterConditions: string[];
   filterCriteria: InterpretedFilterCriteria[];
   filterExpression?: string;
+  filterLogic?: {
+    hasMultipleGroups: boolean;
+    groupsWithMultipleCriteria: number[];
+    logicDescription: string;
+  };
 } {
   const criteria: InterpretedFilterCriteria[] = [];
   let filterExpression: string | undefined;
@@ -129,8 +135,12 @@ function interpretComplexFilter(filterDetails: any, fieldDetailsMap: Map<string,
 
   // Se não conseguimos interpretar pelos campos, tentar pela expressão
   let filterConditions: string[] = [];
+  let filterLogic;
+
   if (criteria.length > 0) {
-    filterConditions = groupFilterCriteria(criteria);
+    const groupResult = groupFilterCriteria(criteria);
+    filterConditions = groupResult.conditions;
+    filterLogic = analyzeFilterLogic(criteria);
   } else if (filterExpression) {
     filterConditions = parseODataFilter(filterExpression);
   } else {
@@ -140,7 +150,8 @@ function interpretComplexFilter(filterDetails: any, fieldDetailsMap: Map<string,
   return {
     filterConditions,
     filterCriteria: criteria,
-    filterExpression
+    filterExpression,
+    filterLogic
   };
 }
 
@@ -157,6 +168,11 @@ function transformPloomesAutomation(
   filterId?: number;
   filterExpression?: string;
   filterCriteria?: InterpretedFilterCriteria[];
+  filterLogic?: {
+    hasMultipleGroups: boolean;
+    groupsWithMultipleCriteria: number[];
+    logicDescription: string;
+  };
   stageId?: number;
   stageName?: string;
   executionHistory?: {

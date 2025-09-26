@@ -258,7 +258,15 @@ export function interpretFilterField(
 /**
  * Agrupa critérios por grupo lógico e conecta com AND/OR
  */
-export function groupFilterCriteria(criteria: InterpretedFilterCriteria[]): string[] {
+export function groupFilterCriteria(criteria: InterpretedFilterCriteria[]): {
+  conditions: string[];
+  groupInfo: Array<{
+    groupNumber: number;
+    operator: 'E' | 'OU';
+    criteriaCount: number;
+    description: string;
+  }>;
+} {
   const groups = new Map<number, InterpretedFilterCriteria[]>();
 
   // Agrupar por LogicalGroupNumber
@@ -271,22 +279,105 @@ export function groupFilterCriteria(criteria: InterpretedFilterCriteria[]): stri
   });
 
   const result: string[] = [];
+  const groupInfo: Array<{
+    groupNumber: number;
+    operator: 'E' | 'OU';
+    criteriaCount: number;
+    description: string;
+  }> = [];
 
   // Construir descrições para cada grupo
   groups.forEach((groupCriteria, groupNumber) => {
     if (groupCriteria.length === 1) {
       const c = groupCriteria[0];
-      result.push(`${c.entity} → ${c.field} → ${c.operation} → ${c.value}`);
+      const description = `${c.entity} → ${c.field} → ${c.operation} → ${c.value}`;
+      result.push(description);
+
+      groupInfo.push({
+        groupNumber,
+        operator: 'E', // Grupo único, mas conectado com outros por AND
+        criteriaCount: 1,
+        description
+      });
     } else {
       // Múltiplos critérios no mesmo grupo = AND
-      const groupDescription = groupCriteria
+      const description = groupCriteria
         .map(c => `${c.entity} → ${c.field} → ${c.operation} → ${c.value}`)
         .join(' E ');
-      result.push(groupDescription);
+      result.push(description);
+
+      groupInfo.push({
+        groupNumber,
+        operator: 'E',
+        criteriaCount: groupCriteria.length,
+        description
+      });
     }
   });
 
-  return result;
+  // Se há múltiplos grupos, eles são conectados por OR
+  if (groups.size > 1) {
+    groupInfo.forEach(info => {
+      if (groups.size > 1) {
+        info.operator = 'OU'; // Entre grupos é OR
+      }
+    });
+  }
+
+  return {
+    conditions: result,
+    groupInfo
+  };
+}
+
+/**
+ * Analisa a lógica de filtros e retorna informações sobre operadores
+ */
+export function analyzeFilterLogic(criteria: InterpretedFilterCriteria[]): {
+  hasMultipleGroups: boolean;
+  groupsWithMultipleCriteria: number[];
+  logicDescription: string;
+} {
+  const groups = new Map<number, InterpretedFilterCriteria[]>();
+
+  criteria.forEach(criterion => {
+    const group = criterion.logicalGroup || 1;
+    if (!groups.has(group)) {
+      groups.set(group, []);
+    }
+    groups.get(group)!.push(criterion);
+  });
+
+  const hasMultipleGroups = groups.size > 1;
+  const groupsWithMultipleCriteria = Array.from(groups.entries())
+    .filter(([, groupCriteria]) => groupCriteria.length > 1)
+    .map(([groupNumber]) => groupNumber);
+
+  let logicDescription = '';
+
+  if (hasMultipleGroups) {
+    logicDescription = `${groups.size} grupos conectados por OU. `;
+  }
+
+  if (groupsWithMultipleCriteria.length > 0) {
+    const groupDescriptions = groupsWithMultipleCriteria.map(groupNum => {
+      const count = groups.get(groupNum)?.length || 0;
+      return `Grupo ${groupNum} (${count} critérios com E)`;
+    }).join(', ');
+    logicDescription += `Grupos com múltiplos critérios: ${groupDescriptions}`;
+  }
+
+  if (!logicDescription) {
+    logicDescription = groups.size === 1 && criteria.length === 1
+      ? 'Critério único'
+      : `${criteria.length} critérios conectados por E`;
+  }
+
+  return {
+    hasMultipleGroups,
+    groupsWithMultipleCriteria,
+    logicDescription
+  };
 }
 
 /**

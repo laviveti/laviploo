@@ -10,6 +10,11 @@ export interface AutomationWithDetails extends Automation {
   filterId?: number;
   filterExpression?: string;
   filterCriteria?: InterpretedFilterCriteria[];
+  filterLogic?: {
+    hasMultipleGroups: boolean;
+    groupsWithMultipleCriteria: number[];
+    logicDescription: string;
+  };
   stageId?: number;
   stageName?: string;
   updater?: string;

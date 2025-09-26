@@ -13,7 +13,8 @@ import {
   Settings,
   Clock,
   Workflow,
-  Building2
+  Building2,
+  ClipboardList
 } from "lucide-react";
 
 interface AutomationEntity {
@@ -32,12 +33,12 @@ interface AutomationEntitiesSidebarProps {
 
 const AUTOMATION_ENTITIES: AutomationEntity[] = [
   { id: 1, name: "contacts", displayName: "Contatos", icon: Users },
-  { id: 2, name: "deals", displayName: "Negócios", icon: Bot },
+  { id: 2, name: "deals", displayName: "Workflow", icon: Bot },
   { id: 3, name: "tasks", displayName: "Tarefas", icon: Activity },
   { id: 4, name: "orders", displayName: "Pedidos", icon: Package },
   { id: 5, name: "quotes", displayName: "Cotações", icon: FileText },
   { id: 6, name: "leads", displayName: "Leads", icon: Building2 },
-  { id: 7, name: "products", displayName: "Produtos", icon: ShoppingCart },
+  { id: 7, name: "quotes", displayName: "Proposta", icon: ClipboardList },
   { id: 8, name: "users", displayName: "Usuários", icon: User },
   { id: 9, name: "workflow", displayName: "Workflow", icon: Workflow },
   { id: 10, name: "system", displayName: "Sistema", icon: Settings }
@@ -51,7 +52,6 @@ export const AutomationEntitiesSidebar = ({
   return (
     <div className="w-64 bg-white border-r border-zinc-200 h-full">
       <div className="p-3 border-b border-zinc-100">
-        <h3 className="text-sm font-semibold text-zinc-800 mb-2">Entidades</h3>
         <button
           onClick={() => onEntitySelect(null)}
           className={cn(
@@ -76,6 +76,7 @@ export const AutomationEntitiesSidebar = ({
       </div>
 
       <div className="p-2">
+        <h3 className="text-sm font-semibold text-zinc-800 mb-2 px-2">Entidades</h3>
         <div className="space-y-1">
           {AUTOMATION_ENTITIES.map((entity) => {
             const Icon = entity.icon;

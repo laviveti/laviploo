@@ -275,37 +275,102 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                           <Filter className='h-4 w-4' />
                           Critérios detalhados dos filtros
                         </div>
-                        <div className='space-y-3'>
-                          {automation.filterCriteria.map((criteria, index) => (
-                            <div key={index} className='bg-white border border-blue-200 rounded-md p-3'>
-                              <div className='flex items-center justify-between mb-2'>
-                                <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>Critério {index + 1}</span>
-                                {criteria.logicalGroup && <span className='text-xs text-blue-600'>Grupo {criteria.logicalGroup}</span>}
-                              </div>
 
-                              <div className='grid grid-cols-1 gap-2 text-sm'>
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-zinc-500 text-xs font-medium w-16'>Entidade:</span>
-                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>{criteria.entity}</span>
-                                </div>
-
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-zinc-500 text-xs font-medium w-16'>Campo:</span>
-                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>{criteria.field}</span>
-                                </div>
-
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-zinc-500 text-xs font-medium w-16'>Operação:</span>
-                                  <span className='font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>{criteria.operation}</span>
-                                </div>
-
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-zinc-500 text-xs font-medium w-16'>Valor:</span>
-                                  <span className='font-medium text-zinc-800 bg-green-100 px-2 py-1 rounded text-green-700'>{criteria.value}</span>
-                                </div>
-                              </div>
+                        {/* Filter Logic Information */}
+                        {automation.filterLogic && (
+                          <div className='mb-3 p-2 bg-blue-100 border border-blue-300 rounded-md'>
+                            <div className='text-xs font-medium text-blue-800 mb-1'>Lógica dos Filtros:</div>
+                            <div className='text-xs text-blue-700'>
+                              {automation.filterLogic.logicDescription}
                             </div>
-                          ))}
+
+                            {/* Explanation of AND/OR */}
+                            <div className='mt-2 text-xs text-blue-600 space-y-1'>
+                              <div>
+                                <span className='font-medium'>Filtros "E":</span> Todas as condições devem ser verdadeiras
+                              </div>
+                              <div>
+                                <span className='font-medium'>Filtros "OU":</span> Pelo menos uma condição deve ser verdadeira
+                              </div>
+                              {automation.filterLogic.hasMultipleGroups && (
+                                <div className='mt-1 p-1 bg-blue-200 rounded text-blue-800'>
+                                  <span className='font-medium'>Este filtro tem múltiplos grupos conectados por "OU"</span>
+                                </div>
+                              )}
+                              {automation.filterLogic.groupsWithMultipleCriteria.length > 0 && (
+                                <div className='mt-1 p-1 bg-blue-200 rounded text-blue-800'>
+                                  <span className='font-medium'>
+                                    Grupos com múltiplos critérios "E": {automation.filterLogic.groupsWithMultipleCriteria.join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className='bg-white border border-blue-200 rounded-md overflow-hidden'>
+                          <table className='w-full text-sm'>
+                            <thead className='bg-blue-100'>
+                              <tr>
+                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Critério</th>
+                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Entidade</th>
+                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Campo</th>
+                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Operação</th>
+                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800'>Valor</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {automation.filterCriteria.map((criteria, index) => {
+                                const isNewGroup = index === 0 || automation.filterCriteria![index - 1].logicalGroup !== criteria.logicalGroup;
+                                const groupIndicator = automation.filterLogic?.hasMultipleGroups && isNewGroup
+                                  ? automation.filterCriteria!.filter(c => c.logicalGroup === criteria.logicalGroup).length > 1
+                                    ? "OU (grupo com E)"
+                                    : "OU"
+                                  : index > 0 && automation.filterCriteria![index - 1].logicalGroup === criteria.logicalGroup
+                                    ? "E"
+                                    : "";
+
+                                return (
+                                  <tr key={index} className={`border-t border-blue-200 ${index % 2 === 0 ? 'bg-white' : 'bg-blue-25'}`}>
+                                    <td className='px-3 py-2 border-r border-blue-200'>
+                                      <div className='flex flex-col gap-1'>
+                                        <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>
+                                          Critério {index + 1}
+                                        </span>
+                                        {criteria.logicalGroup && (
+                                          <div className='text-xs text-blue-600'>
+                                            Grupo {criteria.logicalGroup}
+                                          </div>
+                                        )}
+                                        {groupIndicator && (
+                                          <div className='text-xs font-medium px-2 py-1 rounded text-center'>
+                                            <span className={`
+                                              ${groupIndicator.includes('OU') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}
+                                              px-1 py-0.5 rounded
+                                            `}>
+                                              {groupIndicator}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>
+                                      {criteria.entity}
+                                    </td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>
+                                      {criteria.field}
+                                    </td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-blue-700'>
+                                      {criteria.operation}
+                                    </td>
+                                    <td className='px-3 py-2 font-medium text-green-700'>
+                                      {criteria.value}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     )}
