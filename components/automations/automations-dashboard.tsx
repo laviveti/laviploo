@@ -27,7 +27,7 @@ const ENTITY_NAMES: Record<number, string> = {
   7: "Produtos",
   8: "Usuários",
   9: "Workflow",
-  10: "Sistema"
+  10: "Sistema",
 };
 
 export const AutomationsDashboard = () => {
@@ -46,23 +46,23 @@ export const AutomationsDashboard = () => {
 
   if (isLoadingCounts) {
     return (
-      <div className="h-full flex">
-        <div className="w-64 bg-white border-r border-zinc-200 p-3">
-          <Skeleton className="h-5 w-20 mb-3" />
-          <div className="space-y-2">
+      <div className='h-full flex'>
+        <div className='w-64 bg-white border-r border-zinc-200 p-3'>
+          <Skeleton className='h-5 w-20 mb-3' />
+          <div className='space-y-2'>
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" />
+              <Skeleton key={i} className='h-8 w-full' />
             ))}
           </div>
         </div>
-        <div className="flex-1">
-          <div className="p-3 border-b">
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-8 w-full" />
+        <div className='flex-1'>
+          <div className='p-3 border-b'>
+            <Skeleton className='h-6 w-32 mb-2' />
+            <Skeleton className='h-8 w-full' />
           </div>
-          <div className="p-3 space-y-2">
+          <div className='p-3 space-y-2'>
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full" />
+              <Skeleton key={i} className='h-20 w-full' />
             ))}
           </div>
         </div>
@@ -71,24 +71,17 @@ export const AutomationsDashboard = () => {
   }
 
   return (
-    <div className="h-full flex bg-zinc-50">
+    <div className='h-full flex border bg-zinc-50'>
       {/* Sidebar de Entidades */}
-      <AutomationEntitiesSidebar
-        selectedEntityId={selectedEntityId}
-        onEntitySelect={setSelectedEntityId}
-        entityCounts={entityCounts}
-      />
+      <AutomationEntitiesSidebar selectedEntityId={selectedEntityId} onEntitySelect={setSelectedEntityId} entityCounts={entityCounts} />
 
       {/* Conteúdo Principal */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className='flex-1 flex flex-col min-h-0'>
         {/* Filtros */}
-        <AutomationFilters
-          onFiltersChange={setFilters}
-          selectedEntityName={selectedEntityName}
-        />
+        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} />
 
         {/* Lista de Automações */}
-        <div className="flex-1 overflow-auto bg-white">
+        <div className='flex-1 overflow-auto bg-white'>
           <AutomationInfiniteList
             entityId={selectedEntityId}
             status={filters.status}
