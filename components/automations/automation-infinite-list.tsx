@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import { useAutomationsInfinite } from "@/hooks/use-automations-infinite";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AutomationDetailsPanel } from "./automation-details/automation-details-panel";
 import { MapPin, Settings, CheckCircle2, XCircle, AlertCircle, Calendar, User, Clock, Loader2, Bot, RefreshCcw } from "lucide-react";
 import type { Automation } from "@/types/automations";
 import { cn } from "@/lib/utils";
@@ -22,9 +22,10 @@ interface AutomationInfiniteListProps {
 
 interface AutomationItemProps {
   automation: Automation;
+  onOpenDetails: (automationId: number) => void;
 }
 
-const AutomationItem = ({ automation }: AutomationItemProps) => {
+const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -65,7 +66,10 @@ const AutomationItem = ({ automation }: AutomationItemProps) => {
   };
 
   return (
-    <Card className='hover:drop-shadow p-0 hover:cursor-pointer transition-shadow border-zinc-200 rounded-sm'>
+    <Card 
+      className='hover:drop-shadow p-0 hover:cursor-pointer transition-shadow border-zinc-200 rounded-sm'
+      onClick={() => onOpenDetails(automation.id)}
+    >
       <CardContent className='p-3'>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex items-start gap-2 min-w-0 flex-1'>
@@ -109,6 +113,20 @@ const AutomationItem = ({ automation }: AutomationItemProps) => {
 export const AutomationInfiniteList = ({ entityId, status, search, createdBy, dateFrom, dateTo }: AutomationInfiniteListProps) => {
   const observerRef = useRef<IntersectionObserver>(null);
   const lastAutomationElementRef = useRef<HTMLDivElement>(null);
+  
+  // State for details panel
+  const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
+  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+
+  const handleOpenDetails = useCallback((automationId: number) => {
+    setSelectedAutomationId(automationId);
+    setDetailsPanelOpen(true);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setDetailsPanelOpen(false);
+    setSelectedAutomationId(null);
+  }, []);
 
   const {
     data,
@@ -205,32 +223,44 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
   }
 
   return (
-    <div className='space-y-2 p-3'>
-      {allAutomations.map((automation, index) => {
-        // Last element gets the ref for infinite scrolling
-        const isLast = index === allAutomations.length - 1;
+    <>
+      <div className='space-y-2 p-3'>
+        {allAutomations.map((automation, index) => {
+          // Last element gets the ref for infinite scrolling
+          const isLast = index === allAutomations.length - 1;
 
-        return (
-          <div key={`${automation.id}-${index}`} ref={isLast ? lastAutomationElementCallback : undefined}>
-            <AutomationItem automation={automation} />
+          return (
+            <div key={`${automation.id}-${index}`} ref={isLast ? lastAutomationElementCallback : undefined}>
+              <AutomationItem 
+                automation={automation} 
+                onOpenDetails={handleOpenDetails}
+              />
+            </div>
+          );
+        })}
+
+        {/* Loading indicator */}
+        {(isFetchingNextPage || isFetching) && (
+          <div className='flex justify-center py-4'>
+            <div className='flex items-center gap-2 text-xs text-zinc-500'>
+              <Loader2 className='h-3 w-3 animate-spin' />
+              Carregando mais automações...
+            </div>
           </div>
-        );
-      })}
+        )}
 
-      {/* Loading indicator */}
-      {(isFetchingNextPage || isFetching) && (
-        <div className='flex justify-center py-4'>
-          <div className='flex items-center gap-2 text-xs text-zinc-500'>
-            <Loader2 className='h-3 w-3 animate-spin' />
-            Carregando mais automações...
-          </div>
-        </div>
-      )}
+        {/* No more pages indicator */}
+        {!hasNextPage && allAutomations.length > 0 && (
+          <div className='text-center py-4 text-xs text-zinc-500'>Todas as automações foram carregadas ({allAutomations.length} total)</div>
+        )}
+      </div>
 
-      {/* No more pages indicator */}
-      {!hasNextPage && allAutomations.length > 0 && (
-        <div className='text-center py-4 text-xs text-zinc-500'>Todas as automações foram carregadas ({allAutomations.length} total)</div>
-      )}
-    </div>
+      {/* Details Panel */}
+      <AutomationDetailsPanel
+        automationId={selectedAutomationId}
+        open={detailsPanelOpen}
+        onOpenChange={handleCloseDetails}
+      />
+    </>
   );
 };
