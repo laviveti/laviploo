@@ -80,7 +80,7 @@ export const Hint: React.FC<HintProps> = ({ content, children, side, align, trig
                     getTriangleColor(contentClassName, triangleClassName)
                   )}
                 />
-                <p className={cn("rounded-xs bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
+                <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
               </div>
             ) : (
               content

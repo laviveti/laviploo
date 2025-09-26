@@ -1,7 +1,7 @@
 export interface Integration {
   id: string;
   name: string;
-  status: 'Connected' | 'Disconnected' | 'Error';
+  status: "Connected" | "Disconnected" | "Error";
   description?: string;
   imageUrl?: string;
   enabled: boolean;
@@ -30,7 +30,7 @@ export interface IntegrationBehavior {
   integrationName: string;
 }
 
-export interface IntegrationStats {
+export interface IntegrationStatsType {
   totalIntegrations: number;
   connectedIntegrations: number;
   totalBehaviors: number;
@@ -40,7 +40,7 @@ export interface IntegrationStats {
 export interface IntegrationsData {
   integrations: Integration[];
   behaviors: IntegrationBehavior[];
-  stats: IntegrationStats;
+  stats: IntegrationStatsType;
 }
 
 // API Response Types - Real Ploomes API Structure

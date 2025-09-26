@@ -88,6 +88,7 @@ pnpm typecheck     # Verificar TypeScript
 - **Exceções**: Scripts essenciais para deploy, migração ou operações críticas
 - **Localização**: Diretório `scripts/` deve permanecer limpo em produção
 - **Limpeza**: Remover arquivos temporários de teste antes de commits finais
+- **Linguagem**: SEMPRE criar scripts em TypeScript (.ts), nunca em JavaScript (.js)
 
 ### Preferências de Design/UI
 - **Estilo compacto**: Preferência por elementos com espaçamento e arredondamento menores para design mais sucinto

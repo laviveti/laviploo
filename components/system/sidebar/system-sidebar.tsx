@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { LogoFull } from "../logo";
 import { cn } from "@/lib/utils";
-import { Home, Settings, Zap, LogOut } from "lucide-react";
+import { Home, Settings, Zap, Bot, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -21,6 +21,11 @@ const navigation = [
     name: "Integrações",
     href: "/integracoes",
     icon: Zap,
+  },
+  {
+    name: "Automações",
+    href: "/automacoes",
+    icon: Bot,
   },
   {
     name: "Configurações",
