@@ -12,6 +12,8 @@ export interface AutomationWithDetails extends Automation {
   filterCriteria?: InterpretedFilterCriteria[];
   stageId?: number;
   stageName?: string;
+  updater?: string;
+  lastUpdateDate?: string;
   executionHistory?: {
     date: string;
     status: "success" | "error" | "skipped";

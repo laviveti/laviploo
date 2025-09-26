@@ -216,6 +216,8 @@ function transformPloomesAutomation(
     createdAt: ploomesAutomation.CreateDate,
     lastRun: ploomesAutomation.LastRunTime || undefined,
     creator: ploomesAutomation.Creator?.Name,
+    updater: ploomesAutomation.Updater?.Name,
+    lastUpdateDate: ploomesAutomation.LastUpdateDate || undefined,
     actions: ploomesAutomation.Actions?.map(action => ({
       id: action.Id,
       name: action.Name,
@@ -265,7 +267,7 @@ export async function GET(
     // A API Ploomes retorna uma collection OData mesmo para uma única automação
     // Então vamos fazer uma query filtrada ao invés de buscar por ID diretamente
     const response = await fetch(
-      `${PLOOMES_API_BASE}/Automations?$filter=Id eq ${automationId}&$expand=Entity,Trigger,Actions,Creator,TriggerFilter`,
+      `${PLOOMES_API_BASE}/Automations?$filter=Id eq ${automationId}&$expand=Entity,Trigger,Actions,Creator,TriggerFilter,Updater`,
       {
         headers,
         cache: "no-cache",

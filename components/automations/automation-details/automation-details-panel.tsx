@@ -214,7 +214,8 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                 <CardHeader className='pb-3'>
                   <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-800'>
                     <Target className='h-4 w-4 text-blue-600' />
-                    {getTriggerTypeDisplay(automation.triggerType)}
+                    {/* {getTriggerTypeDisplay(automation.triggerType)} */}
+                    Gatilho: {` ${getTriggerTypeDisplay(automation.triggerType)}`}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-3'>
@@ -222,11 +223,6 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                     <div className='text-xs text-zinc-600'>
                       <span className='font-medium'>Entidade:</span> {getEntityDisplay(automation.entityId)}
                     </div>
-                    {automation.triggerName && (
-                      <div className='text-xs text-zinc-600'>
-                        <span className='font-medium'>Gatilho:</span> {automation.triggerName}
-                      </div>
-                    )}
                     {automation.stageId && (
                       <div className='text-xs text-zinc-600'>
                         <span className='font-medium'>Estágio específico:</span> {automation.stageName || automation.stageId}
@@ -257,25 +253,6 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                 </CardHeader>
                 <CardContent className='space-y-3'>
                   <div className='space-y-3'>
-                    {/* Filter Name */}
-                    {automation.filterName && (
-                      <div className='p-3 bg-red-50 border border-red-200 rounded-md'>
-                        <div className='flex items-center gap-2 text-sm font-medium text-red-700'>
-                          <div className='w-2 h-2 bg-red-500 rounded-full'></div>
-                          {automation.filterName}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Link to Ploomes */}
-                    <div className='p-3 bg-blue-50 border border-blue-200 rounded-md'>
-                      <div className='text-xs text-blue-700 flex items-start gap-2'>
-                        <FileText className='h-3 w-3 mt-0.5' />
-                        <span>Para ver os critérios detalhados, acesse a automação diretamente no Ploomes</span>
-                        <ExternalLink className='h-3 w-3 mt-0.5 ml-auto' />
-                      </div>
-                    </div>
-
                     {/* Filter Conditions */}
                     {automation.filterConditions && automation.filterConditions.length > 0 && (
                       <div className='space-y-3'>
@@ -285,9 +262,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                               <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
                               <span>Filtro {index + 1}</span>
                             </div>
-                            <div className='text-sm text-zinc-700 mt-1 font-mono bg-white p-2 rounded border'>
-                              {condition}
-                            </div>
+                            <div className='text-sm text-zinc-700 mt-1 font-mono bg-white p-2 rounded border'>{condition}</div>
                           </div>
                         ))}
                       </div>
@@ -304,43 +279,29 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                           {automation.filterCriteria.map((criteria, index) => (
                             <div key={index} className='bg-white border border-blue-200 rounded-md p-3'>
                               <div className='flex items-center justify-between mb-2'>
-                                <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>
-                                  Critério {index + 1}
-                                </span>
-                                {criteria.logicalGroup && (
-                                  <span className='text-xs text-blue-600'>
-                                    Grupo {criteria.logicalGroup}
-                                  </span>
-                                )}
+                                <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>Critério {index + 1}</span>
+                                {criteria.logicalGroup && <span className='text-xs text-blue-600'>Grupo {criteria.logicalGroup}</span>}
                               </div>
 
                               <div className='grid grid-cols-1 gap-2 text-sm'>
                                 <div className='flex items-center gap-2'>
                                   <span className='text-zinc-500 text-xs font-medium w-16'>Entidade:</span>
-                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>
-                                    {criteria.entity}
-                                  </span>
+                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>{criteria.entity}</span>
                                 </div>
 
                                 <div className='flex items-center gap-2'>
                                   <span className='text-zinc-500 text-xs font-medium w-16'>Campo:</span>
-                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>
-                                    {criteria.field}
-                                  </span>
+                                  <span className='font-medium text-zinc-800 bg-zinc-100 px-2 py-1 rounded'>{criteria.field}</span>
                                 </div>
 
                                 <div className='flex items-center gap-2'>
                                   <span className='text-zinc-500 text-xs font-medium w-16'>Operação:</span>
-                                  <span className='font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>
-                                    {criteria.operation}
-                                  </span>
+                                  <span className='font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>{criteria.operation}</span>
                                 </div>
 
                                 <div className='flex items-center gap-2'>
                                   <span className='text-zinc-500 text-xs font-medium w-16'>Valor:</span>
-                                  <span className='font-medium text-zinc-800 bg-green-100 px-2 py-1 rounded text-green-700'>
-                                    {criteria.value}
-                                  </span>
+                                  <span className='font-medium text-zinc-800 bg-green-100 px-2 py-1 rounded text-green-700'>{criteria.value}</span>
                                 </div>
                               </div>
                             </div>
@@ -489,18 +450,47 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                           <User className='h-3 w-3' />
                           Criada por:
                         </span>
-                        <span className='font-medium text-zinc-900'>{automation.creator}</span>
+                        <span className='font-medium text-zinc-900'>
+                          {automation.creator} em {formatDate(automation.createdAt)}
+                        </span>
                       </div>
                     )}
 
-                    <div className='flex justify-between'>
-                      <span className='text-zinc-600 flex items-center gap-1'>
-                        <Calendar className='h-3 w-3' />
-                        Criada em:
-                      </span>
-                      <span className='font-medium text-zinc-900'>{formatDate(automation.createdAt)}</span>
-                    </div>
+                    {/* Last Update Information */}
+                    {(automation.lastUpdateDate || automation.updater) && (
+                      <div className='flex justify-between'>
+                        <span className='text-zinc-600 flex items-center gap-1'>
+                          <User className='h-3 w-3' />
+                          Última atualização por:
+                        </span>
+                        <span className='font-medium text-zinc-900'>
+                          {automation.updater || automation.creator || "Sistema"} em{" "}
+                          {automation.lastUpdateDate
+                            ? new Date(automation.lastUpdateDate).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }) +
+                              " às " +
+                              new Date(automation.lastUpdateDate).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : new Date(automation.createdAt).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }) +
+                              " às " +
+                              new Date(automation.createdAt).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                        </span>
+                      </div>
+                    )}
 
+                    {/* última execução */}
                     {automation.lastRun && (
                       <div className='flex justify-between'>
                         <span className='text-zinc-600 flex items-center gap-1'>

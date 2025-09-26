@@ -23,6 +23,7 @@ export interface PloomesAutomation {
   Trigger?: PloomesTrigger;
   Actions?: PloomesAutomationAction[];
   Creator?: PloomesUser;
+  Updater?: PloomesUser;
 }
 
 export interface PloomesEntity {
@@ -68,6 +69,8 @@ export interface Automation {
   createdAt: string;
   lastRun?: string;
   creator?: string;
+  updater?: string;
+  lastUpdateDate?: string;
   actions?: AutomationAction[];
   description?: string;
 }
