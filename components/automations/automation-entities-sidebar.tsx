@@ -41,7 +41,7 @@ const AUTOMATION_ENTITIES: AutomationEntity[] = [
   { id: 1, name: "contacts", displayName: "Cliente", icon: Users },
   { id: 2, name: "workflow", displayName: "Workflow", icon: Bot },
   { id: 4, name: "deals", displayName: "Venda", icon: ShoppingCart },
-  { id: 6, name: "proposals", displayName: "Proposta", icon: ClipboardList },
+  { id: 7, name: "proposals", displayName: "Proposta", icon: ClipboardList },
   { id: 10, name: "products", displayName: "Produto", icon: Package },
   { id: 12, name: "tasks", displayName: "Tarefa", icon: Activity },
   { id: 24, name: "users", displayName: "Usuário", icon: User },
