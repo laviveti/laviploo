@@ -20,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  GitBranch
 } from "lucide-react";
 import type { Automation } from "@/types/automations";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,12 @@ const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
                 <Badge variant='outline' className='text-xs px-1 py-0 rounded-sm'>
                   {automation.triggerName}
                 </Badge>
+                {automation.pipelineName && (
+                  <span className='flex items-center gap-1'>
+                    <GitBranch className='h-3 w-3' />
+                    {automation.pipelineName}
+                  </span>
+                )}
                 {automation.creator && (
                   <span className='flex items-center gap-1'>
                     <User className='h-3 w-3' />

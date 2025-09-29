@@ -76,7 +76,27 @@ function getTriggerName(triggerId: number): string {
   return triggerNames[triggerId] || `Trigger ${triggerId}`;
 }
 
-function transformPloomesAutomation(ploomesAutomation: PloomesAutomation): Automation {
+function transformPloomesAutomation(
+  ploomesAutomation: PloomesAutomation,
+  pipelinesMap?: Record<number, string>,
+  stagesMap?: Record<number, { name: string; pipelineId: number }>
+): Automation {
+  // Get pipeline and stage information
+  let pipelineName: string | undefined;
+  let stageName: string | undefined;
+  
+  if (ploomesAutomation.TriggerDealStageId && stagesMap) {
+    const stageInfo = stagesMap[ploomesAutomation.TriggerDealStageId];
+    if (stageInfo) {
+      stageName = stageInfo.name;
+      if (pipelinesMap) {
+        pipelineName = pipelinesMap[stageInfo.pipelineId];
+      }
+    }
+  } else if (ploomesAutomation.TriggerDealPipelineId && pipelinesMap) {
+    pipelineName = pipelinesMap[ploomesAutomation.TriggerDealPipelineId];
+  }
+
   return {
     id: ploomesAutomation.Id,
     name: ploomesAutomation.Name,
@@ -99,7 +119,12 @@ function transformPloomesAutomation(ploomesAutomation: PloomesAutomation): Autom
     })),
     description: ploomesAutomation.TriggerDealStageId ?
       `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` :
-      undefined
+      undefined,
+    // Pipeline/Stage information
+    triggerDealStageId: ploomesAutomation.TriggerDealStageId,
+    triggerDealPipelineId: ploomesAutomation.TriggerDealPipelineId,
+    pipelineName,
+    stageName
   };
 }
 
@@ -174,7 +199,9 @@ export async function GET(request: Request) {
       reevBehaviorsResponse,
       mailChimpResponse,
       dealsResponse,
-      tasksResponse
+      tasksResponse,
+      pipelinesResponse,
+      stagesResponse
     ] = await Promise.allSettled([
       // Real automations from Ploomes (paginated)
       fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, {
@@ -212,6 +239,15 @@ export async function GET(request: Request) {
       fetch(`${PLOOMES_API_BASE}/Tasks?$top=5&$orderby=CreateDate desc`, {
         headers,
         cache: "no-cache",
+      }),
+      // Pipeline and stage data for automation context
+      fetch(`${PLOOMES_API_BASE}/Deals@Pipelines`, {
+        headers,
+        cache: "no-cache",
+      }),
+      fetch(`${PLOOMES_API_BASE}/Deals@Stages`, {
+        headers,
+        cache: "no-cache",
       })
     ]);
 
@@ -219,6 +255,27 @@ export async function GET(request: Request) {
     const integrations: Integration[] = [];
     const behaviors: IntegrationBehavior[] = [];
     let totalAutomationsCount = 0;
+
+    // Process pipelines and stages data
+    let pipelinesMap: Record<number, string> = {};
+    let stagesMap: Record<number, { name: string; pipelineId: number }> = {};
+
+    if (pipelinesResponse.status === "fulfilled" && pipelinesResponse.value.ok) {
+      const pipelinesData = await pipelinesResponse.value.json();
+      pipelinesData.value?.forEach((pipeline: any) => {
+        pipelinesMap[pipeline.Id] = pipeline.Name;
+      });
+    }
+
+    if (stagesResponse.status === "fulfilled" && stagesResponse.value.ok) {
+      const stagesData = await stagesResponse.value.json();
+      stagesData.value?.forEach((stage: any) => {
+        stagesMap[stage.Id] = {
+          name: stage.Name,
+          pipelineId: stage.PipelineId
+        };
+      });
+    }
 
     // Process count response
     if (countResponse.status === "fulfilled" && countResponse.value.ok) {
@@ -244,7 +301,7 @@ export async function GET(request: Request) {
 
       // Transform to UI format
       filteredAutomations.forEach(automation => {
-        automations.push(transformPloomesAutomation(automation));
+        automations.push(transformPloomesAutomation(automation, pipelinesMap, stagesMap));
       });
     }
 

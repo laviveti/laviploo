@@ -74,6 +74,11 @@ export interface Automation {
   lastUpdateDate?: string;
   actions?: AutomationAction[];
   description?: string;
+  // Pipeline/Stage information
+  triggerDealStageId?: number;
+  triggerDealPipelineId?: number;
+  pipelineName?: string;
+  stageName?: string;
 }
 
 export interface AutomationAction {
