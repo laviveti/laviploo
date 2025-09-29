@@ -127,13 +127,21 @@ export async function GET(request: Request) {
     // Build OData $filter conditions
     const filterConditions: string[] = [];
 
+    // Apply entity filters at OData level for better pagination
     if (entityFilter) {
-      filterConditions.push(`EntityId eq ${entityFilter}`);
+      const entityId = parseInt(entityFilter);
+      if (entityId === 2) {
+        // Para Workflow (EntityId = 2), filtrar apenas automações COM TriggerDealStageId
+        filterConditions.push(`EntityId eq ${entityId} and TriggerDealStageId ne null`);
+      } else {
+        // Para outras entidades, filtrar normalmente
+        filterConditions.push(`EntityId eq ${entityId}`);
+      }
     }
 
-    // Filter for generic automations (those without specific funnel/pipeline)
+    // Generic filter at OData level
     if (genericFilter) {
-      filterConditions.push(`TriggerDealStageId eq null`);
+      filterConditions.push(`(EntityId eq null or (EntityId eq 2 and TriggerDealStageId eq null))`);
     }
 
     if (search) {
@@ -152,9 +160,15 @@ export async function GET(request: Request) {
       automationsQuery += `&$filter=${filterConditions.join(' and ')}`;
     }
 
+    // Build count query (same filters but with $count=true and $top=0)
+    let countQuery = automationsQuery
+      .replace(`$top=${limit}&$skip=${skip}`, '$count=true&$top=0')
+      .replace('&$expand=Entity,Trigger,Actions,Creator', ''); // Remove expand for count query
+
     // Fetch all data in parallel
     const [
       automationsResponse,
+      countResponse,
       integrationsResponse,
       rdStationBehaviorsResponse,
       reevBehaviorsResponse,
@@ -162,8 +176,13 @@ export async function GET(request: Request) {
       dealsResponse,
       tasksResponse
     ] = await Promise.allSettled([
-      // Real automations from Ploomes
+      // Real automations from Ploomes (paginated)
       fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, {
+        headers,
+        cache: "no-cache",
+      }),
+      // Count total automations (with same filters)
+      fetch(`${PLOOMES_API_BASE}/${countQuery}`, {
         headers,
         cache: "no-cache",
       }),
@@ -199,6 +218,13 @@ export async function GET(request: Request) {
     const automations: Automation[] = [];
     const integrations: Integration[] = [];
     const behaviors: IntegrationBehavior[] = [];
+    let totalAutomationsCount = 0;
+
+    // Process count response
+    if (countResponse.status === "fulfilled" && countResponse.value.ok) {
+      const countData = await countResponse.value.json();
+      totalAutomationsCount = countData['@odata.count'] || 0;
+    }
 
     // Process real automations
     if (automationsResponse.status === "fulfilled" && automationsResponse.value.ok) {
@@ -206,27 +232,8 @@ export async function GET(request: Request) {
 
       let filteredAutomations = data.value || [];
 
-      // Apply filters
-      if (entityFilter) {
-        const entityId = parseInt(entityFilter);
-        if (entityId === 2) {
-          // Para Workflow (EntityId = 2), mostrar apenas automações COM TriggerDealStageId
-          filteredAutomations = filteredAutomations.filter(a => 
-            a.EntityId === entityId && a.TriggerDealStageId
-          );
-        } else {
-          // Para outras entidades, filtrar normalmente
-          filteredAutomations = filteredAutomations.filter(a => a.EntityId === entityId);
-        }
-      }
-
-      if (genericFilter) {
-        // Automações genéricas: sem EntityId OU (EntityId = 2 E sem TriggerDealStageId)
-        filteredAutomations = filteredAutomations.filter(a => 
-          !a.EntityId || (a.EntityId === 2 && !a.TriggerDealStageId)
-        );
-      }
-      // If neither filter is applied, show all automations
+      // Entity and generic filters are now handled at OData level for better pagination
+      // Only apply status filter locally since it's not handled in OData
 
       if (statusFilter) {
         filteredAutomations = filteredAutomations.filter(a => {
@@ -312,8 +319,11 @@ export async function GET(request: Request) {
       return acc;
     }, {} as Record<string, number>);
 
+    // Since we're now using OData filtering, use the count query result directly
+    const actualTotalCount = totalAutomationsCount > 0 ? totalAutomationsCount : automations.length;
+
     const stats = {
-      totalAutomations: automations.length,
+      totalAutomations: actualTotalCount,
       activeAutomations: automations.filter(a => a.status === 'active').length,
       totalIntegrations: integrations.length,
       activeIntegrations: integrations.filter(i => i.status === 'Connected').length,

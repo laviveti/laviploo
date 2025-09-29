@@ -1,17 +1,31 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
-import { useAutomationsInfinite } from "@/hooks/use-automations-infinite";
+import { useCallback, useState, useEffect } from "react";
+import { useAutomationsPagination } from "@/hooks/use-automations-pagination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AutomationDetailsPanel } from "./automation-details/automation-details-panel";
-import { MapPin, Settings, CheckCircle2, XCircle, AlertCircle, Calendar, User, Clock, Loader2, Bot, RefreshCcw } from "lucide-react";
+import {
+  MapPin,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Calendar,
+  User,
+  Bot,
+  RefreshCcw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
+} from "lucide-react";
 import type { Automation } from "@/types/automations";
 import { cn } from "@/lib/utils";
 
-interface AutomationInfiniteListProps {
+interface AutomationPaginationListProps {
   entityId?: number | null;
   status?: string;
   search?: string;
@@ -67,7 +81,7 @@ const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
   };
 
   return (
-    <Card 
+    <Card
       className='hover:drop-shadow p-0 hover:cursor-pointer transition-shadow border-zinc-200 rounded-sm'
       onClick={() => onOpenDetails(automation.id)}
     >
@@ -111,10 +125,111 @@ const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
   );
 };
 
-export const AutomationInfiniteList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationInfiniteListProps) => {
-  const observerRef = useRef<IntersectionObserver>(null);
-  const lastAutomationElementRef = useRef<HTMLDivElement>(null);
-  
+const PaginationControls = ({
+  currentPage,
+  totalPages,
+  hasNextPage,
+  hasPreviousPage,
+  goToFirstPage,
+  goToPreviousPage,
+  goToNextPage,
+  goToLastPage,
+  perPage,
+  perPageOptions,
+  setPerPage,
+  totalCount
+}: {
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  goToFirstPage: () => void;
+  goToPreviousPage: () => void;
+  goToNextPage: () => void;
+  goToLastPage: () => void;
+  perPage: number;
+  perPageOptions: readonly number[];
+  setPerPage: (value: number) => void;
+  totalCount: number;
+}) => {
+  const startItem = (currentPage - 1) * perPage + 1;
+  const endItem = Math.min(currentPage * perPage, totalCount);
+
+  return (
+    <div className="flex items-center justify-between p-3 border-t border-zinc-200 bg-zinc-50">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-zinc-600">Itens por página:</span>
+          <Select
+            value={perPage.toString()}
+            onValueChange={(value) => setPerPage(Number(value))}
+          >
+            <SelectTrigger className="h-7 w-16 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {perPageOptions.map((option) => (
+                <SelectItem key={option} value={option.toString()}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-xs text-zinc-600">
+          {startItem}-{endItem} de {totalCount} itens
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToFirstPage}
+          disabled={!hasPreviousPage}
+          className="h-7 w-7 p-0"
+        >
+          <ChevronsLeft className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToPreviousPage}
+          disabled={!hasPreviousPage}
+          className="h-7 w-7 p-0"
+        >
+          <ChevronLeft className="h-3 w-3" />
+        </Button>
+        <div className="flex items-center gap-1 px-2">
+          <span className="text-xs text-zinc-600">
+            Página {currentPage} de {totalPages}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToNextPage}
+          disabled={!hasNextPage}
+          className="h-7 w-7 p-0"
+        >
+          <ChevronRight className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToLastPage}
+          disabled={!hasNextPage}
+          className="h-7 w-7 p-0"
+        >
+          <ChevronsRight className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export const AutomationPaginationList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationPaginationListProps) => {
+
   // State for details panel
   const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
@@ -132,13 +247,18 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
   const {
     data,
     error,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    status: queryStatus,
+    isLoading,
     refetch,
-  } = useAutomationsInfinite({
+    page,
+    perPage,
+    setPage,
+    setPerPage,
+    goToNextPage,
+    goToPreviousPage,
+    goToFirstPage,
+    goToLastPage,
+    perPageOptions,
+  } = useAutomationsPagination({
     entityId,
     status,
     search,
@@ -148,25 +268,13 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
     generic,
   });
 
-  const lastAutomationElementCallback = useCallback(
-    (node: HTMLDivElement) => {
-      if (isFetchingNextPage) return;
-
-      if (observerRef.current) observerRef.current.disconnect();
-
-      observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage();
-        }
-      });
-
-      if (node) observerRef.current.observe(node);
-    },
-    [isFetchingNextPage, fetchNextPage, hasNextPage]
-  );
+  // Reset page when context changes (entityId or generic filter)
+  useEffect(() => {
+    setPage(1);
+  }, [entityId, generic]);
 
   // Loading state
-  if (queryStatus === "pending") {
+  if (isLoading) {
     return (
       <div className='space-y-2 p-3'>
         {Array.from({ length: 6 }).map((_, i) => (
@@ -206,11 +314,10 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
     );
   }
 
-  // Get all automations from all pages
-  const allAutomations = data?.pages?.flatMap((page) => page.automations) || [];
+  const automations = data?.automations || [];
 
   // Empty state
-  if (allAutomations.length === 0) {
+  if (automations.length === 0) {
     return (
       <div className='p-6 text-center'>
         <Bot className='h-8 w-8 text-zinc-400 mx-auto mb-2' />
@@ -226,34 +333,36 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
 
   return (
     <>
-      <div className='space-y-2 p-3'>
-        {allAutomations.map((automation, index) => {
-          // Last element gets the ref for infinite scrolling
-          const isLast = index === allAutomations.length - 1;
-
-          return (
-            <div key={`${automation.id}-${index}`} ref={isLast ? lastAutomationElementCallback : undefined}>
-              <AutomationItem 
-                automation={automation} 
+      <div className='flex flex-col h-full'>
+        {/* Lista de automações */}
+        <div className='flex-1 overflow-auto'>
+          <div className='space-y-2 p-3'>
+            {automations.map((automation) => (
+              <AutomationItem
+                key={automation.id}
+                automation={automation}
                 onOpenDetails={handleOpenDetails}
               />
-            </div>
-          );
-        })}
-
-        {/* Loading indicator */}
-        {(isFetchingNextPage || isFetching) && (
-          <div className='flex justify-center py-4'>
-            <div className='flex items-center gap-2 text-xs text-zinc-500'>
-              <Loader2 className='h-3 w-3 animate-spin' />
-              Carregando mais automações...
-            </div>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* No more pages indicator */}
-        {!hasNextPage && allAutomations.length > 0 && (
-          <div className='text-center py-4 text-xs text-zinc-500'>Todas as automações foram carregadas ({allAutomations.length} total)</div>
+        {/* Controles de paginação */}
+        {data && (
+          <PaginationControls
+            currentPage={data.currentPage}
+            totalPages={data.totalPages}
+            hasNextPage={data.hasNextPage}
+            hasPreviousPage={data.hasPreviousPage}
+            goToFirstPage={goToFirstPage}
+            goToPreviousPage={goToPreviousPage}
+            goToNextPage={goToNextPage}
+            goToLastPage={goToLastPage}
+            perPage={perPage}
+            perPageOptions={perPageOptions}
+            setPerPage={setPerPage}
+            totalCount={data.totalCount}
+          />
         )}
       </div>
 

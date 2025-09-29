@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useQueryStates, parseAsString, parseAsInteger } from "nuqs";
 import { AutomationEntitiesSidebar } from "./automation-entities-sidebar";
 import { AutomationFilters } from "./automation-filters";
-import { AutomationInfiniteList } from "./automation-infinite-list";
-import { useAutomationEntityCounts } from "@/hooks/use-automations-infinite";
+import { AutomationPaginationList } from "./automation-pagination-list";
+import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Bot } from "lucide-react";
@@ -31,9 +32,36 @@ const ENTITY_NAMES: Record<number, string> = {
 };
 
 export const AutomationsDashboard = () => {
+  // Estado local original (funcionava)
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'generic' | null>('all');
   const [filters, setFilters] = useState<AutomationFilters>({});
+
+  // Query param para contexto (espelho do estado)
+  const [{ context }, setContextState] = useQueryStates({
+    context: parseAsString.withDefault('all')
+  });
+
+
+
+  // Sync URL with state changes
+  useEffect(() => {
+    if (selectedFilter === 'generic') {
+      if (context !== 'generic') {
+        setContextState({ context: 'generic' });
+      }
+    } else if (selectedEntityId === null) {
+      if (context !== 'all') {
+        setContextState({ context: 'all' });
+      }
+    } else {
+      const expectedContext = `entity-${selectedEntityId}`;
+      if (context !== expectedContext) {
+        setContextState({ context: expectedContext });
+      }
+    }
+  }, [selectedEntityId, selectedFilter, context, setContextState]);
+
 
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
@@ -57,18 +85,18 @@ export const AutomationsDashboard = () => {
   const { data: entityCountsData, isLoading: isLoadingCounts } = useAutomationEntityCounts();
 
   const entityCounts = useMemo(() => {
-    if (!entityCountsData?.pages?.[0]?.entityCounts) return {};
-    return entityCountsData.pages[0].entityCounts;
+    if (!entityCountsData?.entityCounts) return {};
+    return entityCountsData.entityCounts;
   }, [entityCountsData]);
 
   const genericCount = useMemo(() => {
-    if (!entityCountsData?.pages?.[0]?.genericCount) return { total: 0, active: 0 };
-    return entityCountsData.pages[0].genericCount;
+    if (!entityCountsData?.genericCount) return { total: 0, active: 0 };
+    return entityCountsData.genericCount;
   }, [entityCountsData]);
 
   const totalCount = useMemo(() => {
-    if (!entityCountsData?.pages?.[0]?.totalCount) return 0;
-    return entityCountsData.pages[0].totalCount;
+    if (!entityCountsData?.totalCount) return 0;
+    return entityCountsData.totalCount;
   }, [entityCountsData]);
 
   const selectedEntityName = selectedEntityId ? ENTITY_NAMES[selectedEntityId] : undefined;
@@ -118,8 +146,8 @@ export const AutomationsDashboard = () => {
         <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} />
 
         {/* Lista de Automações */}
-        <div className='flex-1 overflow-auto bg-white'>
-          <AutomationInfiniteList
+        <div className='flex-1 overflow-hidden bg-white'>
+          <AutomationPaginationList
             entityId={selectedFilter === 'generic' ? null : selectedEntityId}
             status={filters.status}
             search={filters.search}

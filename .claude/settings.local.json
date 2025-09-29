@@ -22,7 +22,9 @@
       "Bash(pnpm prisma generate:*)",
       "Bash(pnpm db:migrate:*)",
       "Bash(node:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pnpm list:*)",
+      "Bash(del \"components\\automations\\automation-infinite-list.tsx\")"
     ],
     "deny": [],
     "ask": []

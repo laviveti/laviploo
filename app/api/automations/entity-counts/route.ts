@@ -59,7 +59,7 @@ export async function GET() {
       entityCounts,
       genericCount,
       totalCount,
-      nonGenericCount: totalCount - genericCount
+      nonGenericCount: totalCount - genericCount.total
     });
   } catch (error) {
     console.error("Erro ao buscar contagens de entidades:", error);

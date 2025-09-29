@@ -85,7 +85,7 @@ export const AutomationEntitiesSidebar = ({
             )}
           </div>
         </button>
-        
+
         <button
           onClick={() => {
             onEntitySelect(null);
@@ -107,8 +107,8 @@ export const AutomationEntitiesSidebar = ({
               <span>Genéricas</span>
             </div>
             {genericCount.total > 0 && (
-              <Badge 
-                variant={selectedEntityId === null && selectedFilter === 'generic' ? "default" : "secondary"} 
+              <Badge
+                variant={selectedEntityId === null && selectedFilter === 'generic' ? "default" : "secondary"}
                 className="h-4 text-xs px-1"
               >
                 {genericCount.active}/{genericCount.total}
