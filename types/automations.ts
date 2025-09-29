@@ -6,6 +6,7 @@ export interface PloomesAutomation {
   TriggerId: number;
   TriggerFilterId?: number;
   TriggerDealStageId?: number;
+  TriggerDealPipelineId?: number;
   TriggerRepeatIntervalUnitId?: number;
   TriggerRepeatIntervalLength?: number;
   TriggerRepeatStartDateTime?: string;

@@ -18,6 +18,7 @@ interface AutomationInfiniteListProps {
   createdBy?: string;
   dateFrom?: string;
   dateTo?: string;
+  generic?: boolean;
 }
 
 interface AutomationItemProps {
@@ -110,7 +111,7 @@ const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
   );
 };
 
-export const AutomationInfiniteList = ({ entityId, status, search, createdBy, dateFrom, dateTo }: AutomationInfiniteListProps) => {
+export const AutomationInfiniteList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationInfiniteListProps) => {
   const observerRef = useRef<IntersectionObserver>(null);
   const lastAutomationElementRef = useRef<HTMLDivElement>(null);
   
@@ -144,6 +145,7 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
     createdBy,
     dateFrom,
     dateTo,
+    generic,
   });
 
   const lastAutomationElementCallback = useCallback(
@@ -214,7 +216,7 @@ export const AutomationInfiniteList = ({ entityId, status, search, createdBy, da
         <Bot className='h-8 w-8 text-zinc-400 mx-auto mb-2' />
         <h3 className='text-sm font-medium text-zinc-800 mb-2'>Nenhuma automação encontrada</h3>
         <p className='text-xs text-zinc-600'>
-          {search || status !== "all" || entityId || createdBy || dateFrom || dateTo
+          {search || status !== "all" || entityId || createdBy || dateFrom || dateTo || generic
             ? "Tente ajustar os filtros para encontrar automações"
             : "Não há automações configuradas"}
         </p>

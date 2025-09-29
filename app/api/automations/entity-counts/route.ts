@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { PloomesAutomationsResponse } from "@/types/automations";
+import type { PloomesAutomationsResponse, PloomesAutomation } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
@@ -8,70 +8,59 @@ const headers = {
   "Accept": "application/json",
 };
 
-interface EntityCount {
-  entityId: number;
-  entityName: string;
-  count: number;
-}
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Buscar todas as automações para contar por entidade
-    const automationsQuery = `Automations?$select=EntityId,Entity&$expand=Entity&$top=2000`;
-
-    const response = await fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, {
+    // Fetch all automations to count by entity
+    const response = await fetch(`${PLOOMES_API_BASE}/Automations?$expand=Entity,Trigger`, {
       headers,
       cache: "no-cache",
     });
 
     if (!response.ok) {
-      throw new Error(`Ploomes API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch automations: ${response.statusText}`);
     }
 
     const data: PloomesAutomationsResponse = await response.json();
+    const automations = data.value || [];
 
-    if (!data.value) {
-      return NextResponse.json({ entityCounts: {} });
-    }
+    // Count automations by entity
+    const entityCounts: Record<number, { total: number; active: number }> = {};
+    let genericCount = { total: 0, active: 0 };
+    let totalCount = 0;
 
-    // Contar automações por entidade
-    const entityCounts: Record<number, EntityCount> = {};
-
-    data.value.forEach((automation) => {
-      const entityId = automation.EntityId;
-      const entityName = automation.Entity?.Name || 'Desconhecido';
-
-      if (!entityCounts[entityId]) {
-        entityCounts[entityId] = {
-          entityId,
-          entityName,
-          count: 0
-        };
+    automations.forEach((automation: PloomesAutomation) => {
+      totalCount++;
+      
+      const isActive = automation.Enabled && !automation.DisabledDueToError;
+      
+      if (automation.EntityId) {
+        // Automação pertence a uma entidade específica
+        if (!entityCounts[automation.EntityId]) {
+          entityCounts[automation.EntityId] = { total: 0, active: 0 };
+        }
+        entityCounts[automation.EntityId].total++;
+        if (isActive) {
+          entityCounts[automation.EntityId].active++;
+        }
+      } else {
+        // Automação sem EntityId é considerada genérica
+        genericCount.total++;
+        if (isActive) {
+          genericCount.active++;
+        }
       }
-
-      entityCounts[entityId].count++;
-    });
-
-    // Converter para formato simples
-    const counts: Record<number, number> = {};
-    Object.values(entityCounts).forEach(({ entityId, count }) => {
-      counts[entityId] = count;
     });
 
     return NextResponse.json({
-      entityCounts: counts,
-      totalAutomations: data.value.length,
-      lastUpdated: new Date().toISOString()
+      entityCounts,
+      genericCount,
+      totalCount,
+      nonGenericCount: totalCount - genericCount
     });
-
   } catch (error) {
-    console.error("Error fetching automation entity counts:", error);
+    console.error("Erro ao buscar contagens de entidades:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch automation entity counts",
-        message: getErrorMessage(error),
-        entityCounts: {}
-      },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }

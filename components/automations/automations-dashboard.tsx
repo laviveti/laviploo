@@ -32,7 +32,26 @@ const ENTITY_NAMES: Record<number, string> = {
 
 export const AutomationsDashboard = () => {
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'generic' | null>('all');
   const [filters, setFilters] = useState<AutomationFilters>({});
+
+  // Handle entity selection
+  const handleEntitySelect = (entityId: number | null) => {
+    setSelectedEntityId(entityId);
+    if (entityId !== null) {
+      // When selecting an entity, clear generic filter
+      setSelectedFilter('all');
+    }
+  };
+
+  // Handle filter selection
+  const handleFilterSelect = (filter: 'all' | 'generic' | null) => {
+    setSelectedFilter(filter);
+    if (filter === 'generic') {
+      // When selecting generic, clear entity selection
+      setSelectedEntityId(null);
+    }
+  };
 
   // Fetch entity counts
   const { data: entityCountsData, isLoading: isLoadingCounts } = useAutomationEntityCounts();
@@ -40,6 +59,16 @@ export const AutomationsDashboard = () => {
   const entityCounts = useMemo(() => {
     if (!entityCountsData?.pages?.[0]?.entityCounts) return {};
     return entityCountsData.pages[0].entityCounts;
+  }, [entityCountsData]);
+
+  const genericCount = useMemo(() => {
+    if (!entityCountsData?.pages?.[0]?.genericCount) return { total: 0, active: 0 };
+    return entityCountsData.pages[0].genericCount;
+  }, [entityCountsData]);
+
+  const totalCount = useMemo(() => {
+    if (!entityCountsData?.pages?.[0]?.totalCount) return 0;
+    return entityCountsData.pages[0].totalCount;
   }, [entityCountsData]);
 
   const selectedEntityName = selectedEntityId ? ENTITY_NAMES[selectedEntityId] : undefined;
@@ -73,7 +102,15 @@ export const AutomationsDashboard = () => {
   return (
     <div className='h-full flex border bg-zinc-50'>
       {/* Sidebar de Entidades */}
-      <AutomationEntitiesSidebar selectedEntityId={selectedEntityId} onEntitySelect={setSelectedEntityId} entityCounts={entityCounts} />
+      <AutomationEntitiesSidebar 
+        selectedEntityId={selectedEntityId} 
+        onEntitySelect={handleEntitySelect} 
+        entityCounts={entityCounts}
+        genericCount={genericCount}
+        totalCount={totalCount}
+        selectedFilter={selectedFilter}
+        onFilterSelect={handleFilterSelect}
+      />
 
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
@@ -83,12 +120,13 @@ export const AutomationsDashboard = () => {
         {/* Lista de Automações */}
         <div className='flex-1 overflow-auto bg-white'>
           <AutomationInfiniteList
-            entityId={selectedEntityId}
+            entityId={selectedFilter === 'generic' ? null : selectedEntityId}
             status={filters.status}
             search={filters.search}
             createdBy={filters.createdBy}
             dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
+            generic={selectedFilter === 'generic'}
           />
         </div>
       </div>

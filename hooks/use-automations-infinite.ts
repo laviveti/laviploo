@@ -10,6 +10,7 @@ interface AutomationsFilters {
   createdBy?: string;
   dateFrom?: string;
   dateTo?: string;
+  generic?: boolean;
 }
 
 interface AutomationPage {
@@ -57,6 +58,10 @@ async function fetchAutomationsPage({
 
   if (filters.dateTo) {
     searchParams.set('dateTo', filters.dateTo);
+  }
+
+  if (filters.generic) {
+    searchParams.set('generic', 'true');
   }
 
   // Sempre expandir para ter dados completos

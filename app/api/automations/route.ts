@@ -115,6 +115,7 @@ export async function GET(request: Request) {
     const createdBy = url.searchParams.get('createdBy');
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
+    const genericFilter = url.searchParams.get('generic') === 'true';
 
     // Build automations query with OData parameters
     let automationsQuery = `Automations?$top=${limit}&$skip=${skip}&$orderby=CreateDate desc`;
@@ -128,6 +129,11 @@ export async function GET(request: Request) {
 
     if (entityFilter) {
       filterConditions.push(`EntityId eq ${entityFilter}`);
+    }
+
+    // Filter for generic automations (those without specific funnel/pipeline)
+    if (genericFilter) {
+      filterConditions.push(`TriggerDealStageId eq null`);
     }
 
     if (search) {
@@ -205,6 +211,14 @@ export async function GET(request: Request) {
         const entityId = parseInt(entityFilter);
         filteredAutomations = filteredAutomations.filter(a => a.EntityId === entityId);
       }
+
+      if (genericFilter) {
+        // Filter for generic automations (those without specific funnel/pipeline)
+        filteredAutomations = filteredAutomations.filter(a => 
+          !a.TriggerDealStageId
+        );
+      }
+      // If neither filter is applied, show all automations
 
       if (statusFilter) {
         filteredAutomations = filteredAutomations.filter(a => {
