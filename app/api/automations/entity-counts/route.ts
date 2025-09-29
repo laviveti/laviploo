@@ -33,20 +33,24 @@ export async function GET() {
       
       const isActive = automation.Enabled && !automation.DisabledDueToError;
       
-      if (automation.EntityId) {
-        // Automação pertence a uma entidade específica
+      // Automações genéricas: sem EntityId OU (EntityId = 2 E sem TriggerDealStageId)
+      const isGeneric = !automation.EntityId || 
+                       (automation.EntityId === 2 && !automation.TriggerDealStageId);
+      
+      if (isGeneric) {
+        // Automação genérica
+        genericCount.total++;
+        if (isActive) {
+          genericCount.active++;
+        }
+      } else {
+        // Automação específica de entidade
         if (!entityCounts[automation.EntityId]) {
           entityCounts[automation.EntityId] = { total: 0, active: 0 };
         }
         entityCounts[automation.EntityId].total++;
         if (isActive) {
           entityCounts[automation.EntityId].active++;
-        }
-      } else {
-        // Automação sem EntityId é considerada genérica
-        genericCount.total++;
-        if (isActive) {
-          genericCount.active++;
         }
       }
     });

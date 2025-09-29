@@ -209,13 +209,21 @@ export async function GET(request: Request) {
       // Apply filters
       if (entityFilter) {
         const entityId = parseInt(entityFilter);
-        filteredAutomations = filteredAutomations.filter(a => a.EntityId === entityId);
+        if (entityId === 2) {
+          // Para Workflow (EntityId = 2), mostrar apenas automações COM TriggerDealStageId
+          filteredAutomations = filteredAutomations.filter(a => 
+            a.EntityId === entityId && a.TriggerDealStageId
+          );
+        } else {
+          // Para outras entidades, filtrar normalmente
+          filteredAutomations = filteredAutomations.filter(a => a.EntityId === entityId);
+        }
       }
 
       if (genericFilter) {
-        // Filter for generic automations (those without specific funnel/pipeline)
+        // Automações genéricas: sem EntityId OU (EntityId = 2 E sem TriggerDealStageId)
         filteredAutomations = filteredAutomations.filter(a => 
-          !a.TriggerDealStageId
+          !a.EntityId || (a.EntityId === 2 && !a.TriggerDealStageId)
         );
       }
       // If neither filter is applied, show all automations
