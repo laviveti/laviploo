@@ -154,43 +154,49 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
       <SheetContent className='w-full p-2 sm:max-w-2xl overflow-y-auto'>
         {/* Loading state */}
         {isLoading && (
-          <div className='space-y-6 py-6'>
-            <div className='border-b pb-4'>
-              <Skeleton className='h-6 w-3/4 mb-2' />
-              <Skeleton className='h-4 w-1/2' />
+          <>
+            <SheetTitle className="sr-only">Carregando detalhes da automação</SheetTitle>
+            <div className='space-y-6 py-6'>
+              <div className='border-b pb-4'>
+                <Skeleton className='h-6 w-3/4 mb-2' />
+                <Skeleton className='h-4 w-1/2' />
+              </div>
+              <div className='space-y-4'>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className='border rounded-md p-4'>
+                    <Skeleton className='h-4 w-1/3 mb-3' />
+                    <Skeleton className='h-3 w-full mb-2' />
+                    <Skeleton className='h-3 w-2/3' />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className='space-y-4'>
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className='border rounded-md p-4'>
-                  <Skeleton className='h-4 w-1/3 mb-3' />
-                  <Skeleton className='h-3 w-full mb-2' />
-                  <Skeleton className='h-3 w-2/3' />
-                </div>
-              ))}
-            </div>
-          </div>
+          </>
         )}
 
         {/* Error state */}
         {error && (
-          <div className='flex flex-col items-center justify-center py-12 px-6 text-center'>
-            <AlertCircle className='h-8 w-8 text-red-500 mb-3' />
-            <h3 className='text-sm font-medium text-zinc-800 mb-2'>Erro ao carregar detalhes</h3>
-            <p className='text-xs text-zinc-600 mb-4'>{error instanceof Error ? error.message : "Erro desconhecido"}</p>
-            <Button variant='outline' size='sm' onClick={() => refetch()} className='h-8 px-3 text-xs'>
-              <RefreshCcw className='h-3 w-3 mr-1' />
-              Tentar novamente
-            </Button>
-          </div>
+          <>
+            <SheetTitle className="sr-only">Erro ao carregar automação</SheetTitle>
+            <div className='flex flex-col items-center justify-center py-12 px-6 text-center'>
+              <AlertCircle className='h-8 w-8 text-red-500 mb-3' />
+              <h3 className='text-sm font-medium text-zinc-800 mb-2'>Erro ao carregar detalhes</h3>
+              <p className='text-xs text-zinc-600 mb-4'>{error instanceof Error ? error.message : "Erro desconhecido"}</p>
+              <Button variant='outline' size='sm' onClick={() => refetch()} className='h-8 px-3 text-xs'>
+                <RefreshCcw className='h-3 w-3 mr-1' />
+                Tentar novamente
+              </Button>
+            </div>
+          </>
         )}
 
         {/* Success state */}
         {automation && !isLoading && !error && (
           <>
+            <SheetTitle className='text-lg font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
             <SheetHeader className='border-b pb-4'>
               <div className='flex items-start justify-between'>
                 <div className='flex-1 min-w-0'>
-                  <SheetTitle className='text-lg font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
                   <div className='flex items-center gap-2 mt-2'>
                     <Badge className={`gap-1 text-xs px-2 py-1 rounded-md ${getStatusColor(automation.status)}`}>
                       {getStatusIcon(automation.status)}
@@ -532,25 +538,25 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                           {automation.updater || automation.creator || "Sistema"} em{" "}
                           {automation.lastUpdateDate
                             ? new Date(automation.lastUpdateDate).toLocaleDateString("pt-BR", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              }) +
-                              " às " +
-                              new Date(automation.lastUpdateDate).toLocaleTimeString("pt-BR", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            }) +
+                            " às " +
+                            new Date(automation.lastUpdateDate).toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
                             : new Date(automation.createdAt).toLocaleDateString("pt-BR", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              }) +
-                              " às " +
-                              new Date(automation.createdAt).toLocaleTimeString("pt-BR", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            }) +
+                            " às " +
+                            new Date(automation.createdAt).toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                         </span>
                       </div>
                     )}
