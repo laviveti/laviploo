@@ -1,5 +1,27 @@
-// Teste com vários tipos de filtros OData
-const testFilters = [
+#!/usr/bin/env tsx
+
+/**
+ * Teste com vários tipos de filtros OData
+ */
+
+interface VariousFilterCriterion {
+  fieldId: string;
+  valueType?: string;
+  operation: string;
+  value: string;
+}
+
+interface VariousTestFilter {
+  name: string;
+  filter: string;
+}
+
+interface VariousFilterPattern {
+  regex: RegExp;
+  type: 'complete' | 'direct' | 'quoted';
+}
+
+const variousTestFilters: VariousTestFilter[] = [
   {
     name: "Filtro Complexo Original",
     filter: "$filter=((((OtherProperties/any(o:+o/FieldId+eq+30024523+and+(o/IntegerValue+ne+null))))+and+(((Deal/OtherProperties/all(o:+o/FieldId+ne+30003710))+or+Deal/OtherProperties/any(o:+o/FieldId+eq+30003710+and+((o/StringValue+eq+null+or+o/StringValue+eq+%27%27)))))))"
@@ -19,7 +41,7 @@ const testFilters = [
 ];
 
 // Mapeamento de operações
-const operationMap = {
+const variousOperationMap: Record<string, string> = {
   'eq': 'Igual a',
   'ne': 'Diferente de',
   'gt': 'Maior que',
@@ -32,7 +54,7 @@ const operationMap = {
 };
 
 // Mapeamento de tipos de valor
-const valueTypeMap = {
+const variousValueTypeMap: Record<string, string> = {
   'StringValue': 'Texto',
   'IntegerValue': 'Número',
   'DecimalValue': 'Decimal',
@@ -40,25 +62,25 @@ const valueTypeMap = {
   'BooleanValue': 'Sim/Não'
 };
 
-function decodeFilter(filter) {
+function decodeVariousFilter(filter: string): string {
   return decodeURIComponent(filter.replace(/\+/g, ' '));
 }
 
-function parseODataFilter(filterString) {
-  const criteria = [];
-  
+function parseVariousODataFilter(filterString: string): VariousFilterCriterion[] {
+  const criteria: VariousFilterCriterion[] = [];
+
   if (!filterString) return criteria;
-  
+
   // Remover $filter= do início se existir
   let filter = filterString.replace(/^\$filter=/, '');
-  
+
   // Decodificar URL
-  filter = decodeFilter(filter);
-  
+  filter = decodeVariousFilter(filter);
+
   console.log('Filter decodificado:', filter);
-  
+
   // Padrões para extrair critérios
-  const patterns = [
+  const patterns: VariousFilterPattern[] = [
     // Padrão completo: FieldId + ValueType + Operation + Value
     {
       regex: /o\/FieldId\s+eq\s+(\d+)\s+and\s+\(o\/(\w+Value)\s+(\w+)\s+([^)]+)\)/g,
@@ -75,60 +97,62 @@ function parseODataFilter(filterString) {
       type: 'quoted'
     }
   ];
-  
+
   patterns.forEach((pattern) => {
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = pattern.regex.exec(filter)) !== null) {
-      let criterion = {};
-      
+      let criterion: VariousFilterCriterion;
+
       if (pattern.type === 'complete') {
         criterion = {
           fieldId: match[1],
-          valueType: valueTypeMap[match[2]] || match[2],
-          operation: operationMap[match[3]] || match[3],
+          valueType: variousValueTypeMap[match[2]] || match[2],
+          operation: variousOperationMap[match[3]] || match[3],
           value: match[4].replace(/'/g, '').replace(/null/, 'vazio').trim()
         };
       } else if (pattern.type === 'direct') {
         criterion = {
           fieldId: match[2],
-          operation: operationMap[match[1]] || match[1],
+          operation: variousOperationMap[match[1]] || match[1],
           value: 'definido'
         };
       } else if (pattern.type === 'quoted') {
         criterion = {
           fieldId: match[1],
-          valueType: valueTypeMap[match[2]] || match[2],
-          operation: operationMap[match[3]] || match[3],
+          valueType: variousValueTypeMap[match[2]] || match[2],
+          operation: variousOperationMap[match[3]] || match[3],
           value: match[4]
         };
+      } else {
+        continue;
       }
-      
+
       // Evitar duplicatas
-      const exists = criteria.some(c => 
-        c.fieldId === criterion.fieldId && 
+      const exists = criteria.some(c =>
+        c.fieldId === criterion.fieldId &&
         c.operation === criterion.operation &&
         c.value === criterion.value
       );
-      
+
       if (!exists && criterion.fieldId) {
         criteria.push(criterion);
       }
     }
   });
-  
+
   return criteria;
 }
 
 // Testar todos os filtros
-function testAllFilters() {
+function testVariousFilters(): void {
   console.log('=== TESTE DE VÁRIOS TIPOS DE FILTROS ===\n');
-  
-  testFilters.forEach((test, index) => {
+
+  variousTestFilters.forEach((test, index) => {
     console.log(`${index + 1}. ${test.name}`);
     console.log('='.repeat(50));
-    
-    const criteria = parseODataFilter(test.filter);
-    
+
+    const criteria = parseVariousODataFilter(test.filter);
+
     if (criteria.length > 0) {
       console.log('✅ Critérios extraídos:');
       criteria.forEach((criterion, i) => {
@@ -140,9 +164,11 @@ function testAllFilters() {
     } else {
       console.log('❌ Nenhum critério extraído');
     }
-    
+
     console.log('\n');
   });
 }
 
-testAllFilters();
+if (require.main === module) {
+  testVariousFilters();
+}

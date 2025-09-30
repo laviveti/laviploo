@@ -1,8 +1,27 @@
-// Parser avançado para filtros OData do Ploomes
-const filterString = "$filter=((((OtherProperties/any(o:+o/FieldId+eq+30024523+and+(o/IntegerValue+ne+null))))+and+(((Deal/OtherProperties/all(o:+o/FieldId+ne+30003710))+or+Deal/OtherProperties/any(o:+o/FieldId+eq+30003710+and+((o/StringValue+eq+null+or+o/StringValue+eq+%27%27))))))";
+#!/usr/bin/env tsx
+
+/**
+ * Parser avançado para filtros OData do Ploomes
+ */
+
+interface AdvancedFilterCriterion {
+  fieldId: string;
+  valueType?: string;
+  operation: string;
+  value: string;
+  fieldName?: string;
+  entity?: string;
+}
+
+interface AdvancedFilterPattern {
+  regex: RegExp;
+  type: 'complete' | 'direct' | 'anyall';
+}
+
+const advancedFilterString = "$filter=((((OtherProperties/any(o:+o/FieldId+eq+30024523+and+(o/IntegerValue+ne+null))))+and+(((Deal/OtherProperties/all(o:+o/FieldId+ne+30003710))+or+Deal/OtherProperties/any(o:+o/FieldId+eq+30003710+and+((o/StringValue+eq+null+or+o/StringValue+eq+%27%27))))))";
 
 // Mapeamento de operações
-const operationMap = {
+const advancedOperationMap: Record<string, string> = {
   'eq': 'Igual a',
   'ne': 'Diferente de',
   'gt': 'Maior que',
@@ -15,7 +34,7 @@ const operationMap = {
 };
 
 // Mapeamento de tipos de valor
-const valueTypeMap = {
+const advancedValueTypeMap: Record<string, string> = {
   'StringValue': 'Texto',
   'IntegerValue': 'Número',
   'DecimalValue': 'Decimal',
@@ -23,24 +42,24 @@ const valueTypeMap = {
   'BooleanValue': 'Sim/Não'
 };
 
-function decodeFilter(filter) {
+function decodeAdvancedFilter(filter: string): string {
   return decodeURIComponent(filter.replace(/\+/g, ' '));
 }
 
-function parseODataFilter(filterString) {
-  const criteria = [];
+function parseAdvancedODataFilter(filterString: string): AdvancedFilterCriterion[] {
+  const criteria: AdvancedFilterCriterion[] = [];
   
   // Remover $filter= do início
   let filter = filterString.replace(/^\$filter=/, '');
   
   // Decodificar URL
-  filter = decodeFilter(filter);
+  filter = decodeAdvancedFilter(filter);
   
   console.log('Filter decodificado:', filter);
   console.log('='.repeat(80));
   
   // Padrões mais específicos para extrair critérios
-  const patterns = [
+  const patterns: AdvancedFilterPattern[] = [
     // Padrão completo: FieldId + ValueType + Operation + Value
     {
       regex: /o\/FieldId\s+eq\s+(\d+)\s+and\s+\(o\/(\w+Value)\s+(\w+)\s+([^)]+)\)/g,
@@ -60,31 +79,33 @@ function parseODataFilter(filterString) {
   
   patterns.forEach((pattern, index) => {
     console.log(`\n--- Testando padrão ${index + 1} (${pattern.type}) ---`);
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = pattern.regex.exec(filter)) !== null) {
       console.log('Match:', match);
       
-      let criterion = {};
+      let criterion: AdvancedFilterCriterion;
       
       if (pattern.type === 'complete') {
         criterion = {
           fieldId: match[1],
-          valueType: valueTypeMap[match[2]] || match[2],
-          operation: operationMap[match[3]] || match[3],
+          valueType: advancedValueTypeMap[match[2]] || match[2],
+          operation: advancedOperationMap[match[3]] || match[3],
           value: match[4].replace(/'/g, '').replace(/null/, 'vazio').trim()
         };
       } else if (pattern.type === 'direct') {
         criterion = {
           fieldId: match[2],
-          operation: operationMap[match[1]] || match[1],
+          operation: advancedOperationMap[match[1]] || match[1],
           value: 'definido'
         };
       } else if (pattern.type === 'anyall') {
         criterion = {
           fieldId: match[3],
-          operation: operationMap[match[2]] || match[2],
+          operation: advancedOperationMap[match[2]] || match[2],
           value: match[1] === 'any' ? 'tem valor' : 'não tem valor'
         };
+      } else {
+        continue;
       }
       
       // Evitar duplicatas
@@ -103,9 +124,9 @@ function parseODataFilter(filterString) {
 }
 
 // Função para simular busca de nomes de campos (seria uma API call real)
-async function enrichCriteriaWithFieldNames(criteria) {
+async function enrichAdvancedCriteriaWithFieldNames(criteria: AdvancedFilterCriterion[]): Promise<AdvancedFilterCriterion[]> {
   // Simulação de mapeamento de IDs para nomes de campos
-  const fieldNameMap = {
+  const fieldNameMap: Record<string, string> = {
     '30024523': 'Status do Cliente',
     '30003710': 'Origem do Lead'
   };
@@ -118,14 +139,14 @@ async function enrichCriteriaWithFieldNames(criteria) {
 }
 
 // Testar o parser
-async function testParser() {
+async function testAdvancedParser(): Promise<void> {
   console.log('=== TESTE DO PARSER AVANÇADO ===');
   
-  const rawCriteria = parseODataFilter(filterString);
+  const rawCriteria = parseAdvancedODataFilter(advancedFilterString);
   console.log('\n=== CRITÉRIOS BRUTOS ===');
   console.log(JSON.stringify(rawCriteria, null, 2));
   
-  const enrichedCriteria = await enrichCriteriaWithFieldNames(rawCriteria);
+  const enrichedCriteria = await enrichAdvancedCriteriaWithFieldNames(rawCriteria);
   console.log('\n=== CRITÉRIOS ENRIQUECIDOS ===');
   console.log(JSON.stringify(enrichedCriteria, null, 2));
   
@@ -135,4 +156,6 @@ async function testParser() {
   });
 }
 
-testParser();
+if (require.main === module) {
+  testAdvancedParser();
+}

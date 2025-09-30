@@ -1,7 +1,23 @@
-// Script para testar a API de filtros
+#!/usr/bin/env tsx
+
+/**
+ * Script para testar a API de filtros
+ */
+
+interface APIFilterCriterion {
+  entity: string;
+  field: string;
+  operation: string;
+  value: string;
+}
+
+interface FilterAPIResponse {
+  criteria: APIFilterCriterion[];
+}
+
 const testFilterId = 123; // Substitua por um ID real de filtro
 
-async function testFilterAPI() {
+async function testFilterAPI(): Promise<void> {
   try {
     console.log('=== TESTE DA API DE FILTROS ===');
     console.log(`Testando filtro ID: ${testFilterId}`);
@@ -15,7 +31,7 @@ async function testFilterAPI() {
       return;
     }
     
-    const data = await response.json();
+    const data: FilterAPIResponse = await response.json();
     
     console.log('\n=== RESPOSTA DA API ===');
     console.log(JSON.stringify(data, null, 2));
@@ -36,6 +52,9 @@ async function testFilterAPI() {
 
 // Executar apenas se o servidor estiver rodando
 console.log('Para testar a API, certifique-se de que o servidor Next.js está rodando em localhost:3000');
-console.log('Depois execute: node scripts/test-filter-api.js');
+console.log('Depois execute: npx tsx scripts/test-filter-api.ts');
 
-// testFilterAPI();
+if (require.main === module) {
+  // testFilterAPI();
+  console.log('Descomente a linha acima para executar o teste');
+}

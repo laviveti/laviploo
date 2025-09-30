@@ -1,25 +1,37 @@
-// Script para testar o parser de filtros OData
-const filterString = "$filter=((((OtherProperties/any(o:+o/FieldId+eq+30024523+and+(o/IntegerValue+ne+null))))+and+(((Deal/OtherProperties/all(o:+o/FieldId+ne+30003710))+or+Deal/OtherProperties/any(o:+o/FieldId+eq+30003710+and+((o/StringValue+eq+null+or+o/StringValue+eq+%27%27))))))";
+#!/usr/bin/env tsx
+
+/**
+ * Script para testar o parser de filtros OData
+ */
+
+interface ParserFilterCriterion {
+  fieldId: string;
+  valueType?: string;
+  operation: string;
+  value: string;
+}
+
+const parserFilterString = "$filter=((((OtherProperties/any(o:+o/FieldId+eq+30024523+and+(o/IntegerValue+ne+null))))+and+(((Deal/OtherProperties/all(o:+o/FieldId+ne+30003710))+or+Deal/OtherProperties/any(o:+o/FieldId+eq+30003710+and+((o/StringValue+eq+null+or+o/StringValue+eq+%27%27))))))";
 
 // Função para decodificar URL
-function decodeFilter(filter) {
+function decodeParserFilter(filter: string): string {
   return decodeURIComponent(filter.replace(/\+/g, ' '));
 }
 
 // Função para extrair critérios do filtro OData
-function parseODataFilter(filterString) {
-  const criteria = [];
+function parseParserODataFilter(filterString: string): ParserFilterCriterion[] {
+  const criteria: ParserFilterCriterion[] = [];
   
   // Remover $filter= do início
   let filter = filterString.replace(/^\$filter=/, '');
   
   // Decodificar URL
-  filter = decodeFilter(filter);
+  filter = decodeParserFilter(filter);
   
   console.log('Filter decodificado:', filter);
   
   // Regex para encontrar padrões de campo
-  const fieldPatterns = [
+  const fieldPatterns: RegExp[] = [
     // Padrão: o/FieldId eq NUMERO and (o/TipoValue operacao valor)
     /o\/FieldId\s+eq\s+(\d+)\s+and\s+\(o\/(\w+Value)\s+(\w+)\s+([^)]+)\)/g,
     // Padrão: o/FieldId eq NUMERO
@@ -30,7 +42,7 @@ function parseODataFilter(filterString) {
   
   // Extrair todos os matches
   fieldPatterns.forEach(pattern => {
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = pattern.exec(filter)) !== null) {
       console.log('Match encontrado:', match);
       
@@ -57,6 +69,12 @@ function parseODataFilter(filterString) {
 }
 
 // Testar o parser
-console.log('=== TESTE DO PARSER DE FILTROS ===');
-const result = parseODataFilter(filterString);
-console.log('Critérios extraídos:', JSON.stringify(result, null, 2));
+function testParserFilter(): void {
+  console.log('=== TESTE DO PARSER DE FILTROS ===');
+  const result = parseParserODataFilter(parserFilterString);
+  console.log('Critérios extraídos:', JSON.stringify(result, null, 2));
+}
+
+if (require.main === module) {
+  testParserFilter();
+}
