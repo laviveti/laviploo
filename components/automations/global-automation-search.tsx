@@ -135,14 +135,27 @@ export function GlobalAutomationSearch({
   const highlightMatch = (text: string, query: string) => {
     if (!query.trim()) return text;
 
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    // Split query into multiple terms
+    const terms = query.split(/\s+/).filter(term => term.length > 0);
+
+    // Escape special regex characters and join with OR operator
+    const escapedTerms = terms.map(term =>
+      term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+
+    const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
     const parts = text.split(regex);
 
-    return parts.map((part, index) =>
-      regex.test(part) ?
+    return parts.map((part, index) => {
+      // Check if this part matches any of the search terms
+      const isMatch = terms.some(term =>
+        part.toLowerCase() === term.toLowerCase()
+      );
+
+      return isMatch ?
         <mark key={index} className="bg-rose-100 text-rose-900 px-0.5 rounded-sm">{part}</mark> :
-        part
-    );
+        part;
+    });
   };
 
   return (
@@ -176,7 +189,7 @@ export function GlobalAutomationSearch({
             </div>
           )}
 
-          {/* No Results */}
+          {/* No Results - Only show when not loading and there are truly no results */}
           {!isLoading && query.length > 0 && results.length === 0 && (
             <div className="p-3 text-center text-sm text-zinc-500">
               <Search className="h-4 w-4 mx-auto mb-1 text-zinc-400" />
@@ -185,13 +198,13 @@ export function GlobalAutomationSearch({
           )}
 
           {/* Search Results */}
-          {results.length > 0 && (
+          {!isLoading && results.length > 0 && (
             <>
               {/* Results Header */}
               <div className="px-3 py-2 border-b border-zinc-100 bg-zinc-50">
                 <div className="flex items-center justify-between text-xs text-zinc-600">
-                  <span>{total} automação{total !== 1 ? 'ões' : ''} encontrada{total !== 1 ? 's' : ''}</span>
-                  <span className="text-zinc-400">↑↓ para navegar • Enter para selecionar</span>
+                  <span>{total} automaç{total !== 1 ? 'ões' : 'ão'} encontrada{total !== 1 ? 's' : ''}</span>
+                  <span className="text-zinc-400">↑↓ para navegar • Enter para abrir</span>
                 </div>
               </div>
 

@@ -163,20 +163,34 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
     const url = new URL(request.url);
     const query = url.searchParams.get('q')?.trim();
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
       return NextResponse.json({ results: [], total: 0, query: query || '' });
     }
 
+    // Split query into individual terms for multi-term search
+    const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+
     // Escape single quotes for OData
     const escapedQuery = query.replace(/'/g, "''");
+    const escapedTerms = searchTerms.map(term => term.replace(/'/g, "''"));
 
-    // Build comprehensive search query
+    // Build comprehensive search query - search for full query AND individual terms
     const searchConditions = [
+      // Search for full query in Name
       `contains(tolower(Name), tolower('${escapedQuery}'))`,
+      // Search for full query in Creator/Name
       `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
+      // Search for individual terms in Name
+      ...escapedTerms.map(term =>
+        `contains(tolower(Name), tolower('${term}'))`
+      ),
+      // Search for individual terms in Creator/Name
+      ...escapedTerms.map(term =>
+        `contains(tolower(Creator/Name), tolower('${term}'))`
+      )
     ];
 
-    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$filter=${searchConditions.join(' or ')}&$top=50&$orderby=CreateDate desc`;
+    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$filter=${searchConditions.join(' or ')}&$top=100&$orderby=CreateDate desc`;
 
     // Fetch context data in parallel
     const [
@@ -232,6 +246,21 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       });
     }
 
+    // Helper function to calculate match score
+    const calculateMatchScore = (text: string, terms: string[]): number => {
+      const lowerText = text.toLowerCase();
+      let score = 0;
+
+      // Count how many terms are found in the text
+      terms.forEach(term => {
+        if (lowerText.includes(term.toLowerCase())) {
+          score++;
+        }
+      });
+
+      return score;
+    };
+
     const results: SearchResult[] = [];
 
     if (automationsResponse.status === "fulfilled" && automationsResponse.value.ok) {
@@ -244,58 +273,75 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           stagesMap
         );
 
+        // Calculate match score for each field
+        const nameScore = calculateMatchScore(automation.Name || '', searchTerms);
+        const creatorScore = calculateMatchScore(automation.Creator?.Name || '', searchTerms);
+        const pipelineScore = calculateMatchScore(transformedAutomation.pipelineName || '', searchTerms);
+        const stageScore = calculateMatchScore(transformedAutomation.stageName || '', searchTerms);
+        const entityScore = calculateMatchScore(transformedAutomation.entityName || '', searchTerms);
+        const triggerScore = calculateMatchScore(transformedAutomation.triggerName || '', searchTerms);
+
+        let actionsScore = 0;
+        automation.Actions?.forEach(action => {
+          actionsScore += calculateMatchScore(action.Name || '', searchTerms);
+        });
+
+        const totalScore = nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + actionsScore;
+
+        // Only include results that match at least one term
+        if (totalScore === 0) return;
+
         // Determine which fields matched
         const matchedFields: string[] = [];
         let matchedContent = '';
 
         const lowerQuery = query.toLowerCase();
 
-        if (automation.Name?.toLowerCase().includes(lowerQuery)) {
+        // Check for matches (keeping original logic for display)
+        if (nameScore > 0) {
           matchedFields.push('nome');
-          matchedContent = automation.Name;
+          matchedContent = automation.Name || '';
         }
 
-        if (automation.Creator?.Name?.toLowerCase().includes(lowerQuery)) {
+        if (creatorScore > 0) {
           matchedFields.push('criador');
           if (matchedContent) matchedContent += ` • `;
-          matchedContent += `Criado por ${automation.Creator.Name}`;
+          matchedContent += `Criado por ${automation.Creator?.Name}`;
         }
 
-        // Check pipeline/stage matches
-        if (transformedAutomation.pipelineName?.toLowerCase().includes(lowerQuery)) {
+        if (pipelineScore > 0) {
           matchedFields.push('pipeline');
           if (matchedContent) matchedContent += ` • `;
           matchedContent += `Pipeline: ${transformedAutomation.pipelineName}`;
         }
 
-        if (transformedAutomation.stageName?.toLowerCase().includes(lowerQuery)) {
+        if (stageScore > 0) {
           matchedFields.push('estágio');
           if (matchedContent) matchedContent += ` • `;
           matchedContent += `Estágio: ${transformedAutomation.stageName}`;
         }
 
-        // Check entity name matches
-        if (transformedAutomation.entityName?.toLowerCase().includes(lowerQuery)) {
+        if (entityScore > 0) {
           matchedFields.push('entidade');
           if (matchedContent) matchedContent += ` • `;
           matchedContent += `Entidade: ${transformedAutomation.entityName}`;
         }
 
-        // Check trigger name matches
-        if (transformedAutomation.triggerName?.toLowerCase().includes(lowerQuery)) {
+        if (triggerScore > 0) {
           matchedFields.push('gatilho');
           if (matchedContent) matchedContent += ` • `;
           matchedContent += `Gatilho: ${transformedAutomation.triggerName}`;
         }
 
-        // Check actions matches
-        automation.Actions?.forEach(action => {
-          if (action.Name?.toLowerCase().includes(lowerQuery)) {
-            matchedFields.push('ação');
-            if (matchedContent) matchedContent += ` • `;
-            matchedContent += `Ação: ${action.Name}`;
-          }
-        });
+        if (actionsScore > 0) {
+          automation.Actions?.forEach(action => {
+            if (calculateMatchScore(action.Name || '', searchTerms) > 0) {
+              matchedFields.push('ação');
+              if (matchedContent) matchedContent += ` • `;
+              matchedContent += `Ação: ${action.Name}`;
+            }
+          });
+        }
 
         if (!matchedContent) {
           matchedContent = transformedAutomation.name;
@@ -304,9 +350,13 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
         results.push({
           ...transformedAutomation,
           matchedFields,
-          matchedContent
-        });
+          matchedContent,
+          score: totalScore
+        } as SearchResult & { score: number });
       });
+
+      // Sort by score (higher score = more terms matched)
+      results.sort((a: any, b: any) => b.score - a.score);
     }
 
     // Additional search in pipeline/stage names if no results found in automations
