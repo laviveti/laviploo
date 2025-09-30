@@ -1,99 +1,99 @@
-# LaviPloo Technical Stack
+# Stack Técnico LaviPloo
 
-## Framework & Language
-- **Next.js 15+** with App Router architecture
-- **TypeScript** (strict mode, no `any` types allowed)
-- **React 19** with server and client components
+## Framework e Linguagem
+- **Next.js 15+** com arquitetura App Router
+- **TypeScript** (modo strict, tipos `any` não permitidos)
+- **React 19** com componentes server e client
 
-## Styling & UI
-- **Tailwind CSS 4.0** for styling
-- **shadcn/ui** components (New York style)
-- **Lucide React** for icons
-- **Radix UI** primitives for accessibility
+## Estilização e UI
+- **Tailwind CSS 4.0** para estilização
+- Componentes **shadcn/ui** (estilo New York)
+- **Lucide React** para ícones
+- Primitivos **Radix UI** para acessibilidade
 
-## Data Management
-- **TanStack Query** for server state management and caching
-- **Zustand** for client-side state management
-- **Nuqs** for URL state management
-- **TanStack Table** (Dice UI fork) for data tables
+## Gerenciamento de Dados
+- **TanStack Query** para gerenciamento de estado do servidor e cache
+- **Zustand** para gerenciamento de estado do cliente
+- **Nuqs** para gerenciamento de estado da URL
+- **TanStack Table** (fork Dice UI) para tabelas de dados
 
-## Database & Authentication
-- **PostgreSQL** via Docker containers
-- **Prisma** ORM for database operations
-- **Better Auth** with Magic Link authentication only
+## Banco de Dados e Autenticação
+- **PostgreSQL** via containers Docker
+- **Prisma** ORM para operações de banco de dados
+- **Better Auth** apenas com autenticação Magic Link
 
-## Validation & Forms
-- **Zod** for schema validation
-- **React Hook Form** for form management
-- **@hookform/resolvers** for Zod integration
+## Validação e Formulários
+- **Zod** para validação de esquemas
+- **React Hook Form** para gerenciamento de formulários
+- **@hookform/resolvers** para integração com Zod
 
-## Development Tools
-- **pnpm** as package manager
-- **ESLint** for code linting
-- **TypeScript** compiler for type checking
-- **Docker Compose** for local development
+## Ferramentas de Desenvolvimento
+- **pnpm** como gerenciador de pacotes
+- **ESLint** para linting de código
+- Compilador **TypeScript** para verificação de tipos
+- **Docker Compose** para desenvolvimento local
 
-## API Integration
-- Direct integration with **Ploomes API V2**
-- All external API calls through Next.js API routes
-- GET-only operations with `cache: "no-cache"`
-- `User-Key` header authentication
+## Integração de API
+- Integração direta com **API Ploomes V2**
+- Todas as chamadas de API externas através de rotas Next.js API
+- Operações apenas GET com `cache: "no-cache"`
+- Autenticação via header `User-Key`
 
-## Common Commands
+## Comandos Comuns
 
-### Development
+### Desenvolvimento
 ```bash
-pnpm dev              # Start development server with Turbopack
-pnpm build            # Build for production
-pnpm start            # Start production server
-pnpm typecheck        # Run TypeScript checks
-pnpm lint             # Run ESLint
+pnpm dev              # Iniciar servidor de desenvolvimento com Turbopack
+pnpm build            # Build para produção
+pnpm start            # Iniciar servidor de produção
+pnpm typecheck        # Executar verificações TypeScript
+pnpm lint             # Executar ESLint
 ```
 
-### Database Operations
+### Operações de Banco de Dados
 ```bash
-pnpm db:setup         # Initial database setup
-pnpm db:start         # Start PostgreSQL container
-pnpm db:stop          # Stop all containers
-pnpm db:reset         # Reset database completely
-pnpm db:studio        # Open Prisma Studio
-pnpm db:migrate       # Run database migrations
-pnpm db:generate      # Generate Prisma client
-pnpm db:push          # Push schema changes
-pnpm db:seed          # Seed database with initial data
+pnpm db:setup         # Configuração inicial do banco de dados
+pnpm db:start         # Iniciar container PostgreSQL
+pnpm db:stop          # Parar todos os containers
+pnpm db:reset         # Resetar banco de dados completamente
+pnpm db:studio        # Abrir Prisma Studio
+pnpm db:migrate       # Executar migrações do banco de dados
+pnpm db:generate      # Gerar cliente Prisma
+pnpm db:push          # Aplicar mudanças do schema
+pnpm db:seed          # Popular banco com dados iniciais
 ```
 
-### UI Components
+### Componentes UI
 ```bash
-pnpm shadcn:add       # Add new shadcn/ui components
+pnpm shadcn:add       # Adicionar novos componentes shadcn/ui
 ```
 
-## Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string
-- `PLOOOMES_API_KEY` - Ploomes API authentication key
-- `BETTER_AUTH_SECRET` - Authentication secret key
-- `BETTER_AUTH_URL` - Application URL for auth callbacks
+## Variáveis de Ambiente
+- `DATABASE_URL` - String de conexão PostgreSQL
+- `PLOOOMES_API_KEY` - Chave de autenticação da API Ploomes
+- `BETTER_AUTH_SECRET` - Chave secreta de autenticação
+- `BETTER_AUTH_URL` - URL da aplicação para callbacks de auth
 
-## API Integration Patterns
-- **CRITICAL**: Only GET requests to Ploomes API
-- **No Cache**: Always use `cache: "no-cache"` for fresh data
-- **Authentication**: Include `User-Key: process.env.PLOOOMES_API_KEY` header
-- **Validation**: Always validate inputs with Zod schemas
-- **Error Handling**: Use `getErrorMessage` utility from `lib/handle-error.ts`
-- **Client Consumption**: Use TanStack Query hooks for client-side data fetching
+## Padrões de Integração de API
+- **CRÍTICO**: Apenas requisições GET para API Ploomes
+- **Sem Cache**: Sempre usar `cache: "no-cache"` para dados frescos
+- **Autenticação**: Incluir header `User-Key: process.env.PLOOOMES_API_KEY`
+- **Validação**: Sempre validar inputs com schemas Zod
+- **Tratamento de Erro**: Usar utilitário `getErrorMessage` de `lib/handle-error.ts`
+- **Consumo Cliente**: Usar hooks TanStack Query para busca de dados client-side
 
-## Required Utilities
-- `lib/handle-error.ts` - Centralized error handling utility (must be created)
+## Utilitários Obrigatórios
+- `lib/handle-error.ts` - Utilitário centralizado de tratamento de erros (deve ser criado)
 
-## Development Guidelines
-### Script Management
-- **Default**: Remove all test scripts after development/debugging
-- **Exception**: Keep only scripts essential for deploy, migration, or critical operations
-- **Language**: Always create scripts in TypeScript (.ts), never JavaScript (.js)
-- **Location**: Keep `scripts/` directory clean in production
+## Diretrizes de Desenvolvimento
+### Gerenciamento de Scripts
+- **Padrão**: Remover todos os scripts de teste após desenvolvimento/debug
+- **Exceção**: Manter apenas scripts essenciais para deploy, migração ou operações críticas
+- **Linguagem**: Sempre criar scripts em TypeScript (.ts), nunca JavaScript (.js)
+- **Localização**: Manter diretório `scripts/` limpo em produção
 
-### Documentation References
-- Complete docs: `/docs/README.md`
-- Better Auth migration: `/docs/integrations/better-auth-migration.md`
-- Docker setup: `/docs/integrations/docker-setup.md`
-- Ploomes API: Use MCP Context7 `API Ploomes V2` or `/docs/ploomes/api-ploomes-v2-documentation.md`
+### Referências de Documentação
+- Documentação completa: `/docs/README.md`
+- Migração Better Auth: `/docs/integrations/better-auth-migration.md`
+- Configuração Docker: `/docs/integrations/docker-setup.md`
+- API Ploomes: Usar MCP Context7 `API Ploomes V2` ou `/docs/ploomes/api-ploomes-v2-documentation.md`

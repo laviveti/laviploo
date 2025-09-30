@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQueryStates, parseAsString } from "nuqs";
 import { AutomationSidebar } from "./automation-sidebar";
 import { AutomationFilters } from "./automation-filters";
-import { AutomationPaginationList } from "./automation-pagination-list";
+import { AutomationList } from "./automation-list";
 import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
@@ -49,26 +49,26 @@ export const AutomationsDashboard = () => {
 
   // Sync URL with state changes
   useEffect(() => {
-    console.log('[DASHBOARD] URL sync useEffect triggered', {
+    console.log("[DASHBOARD] URL sync useEffect triggered", {
       selectedFilter,
       selectedEntityId,
-      currentContext: context
+      currentContext: context,
     });
 
     if (selectedFilter === "generic") {
       if (context !== "generic") {
-        console.log('[DASHBOARD] Setting context to generic');
+        console.log("[DASHBOARD] Setting context to generic");
         setContextState({ context: "generic" });
       }
     } else if (selectedEntityId === null) {
       if (context !== "all") {
-        console.log('[DASHBOARD] Setting context to all');
+        console.log("[DASHBOARD] Setting context to all");
         setContextState({ context: "all" });
       }
     } else {
       const expectedContext = `entity-${selectedEntityId}`;
       if (context !== expectedContext) {
-        console.log('[DASHBOARD] Setting context to', expectedContext);
+        console.log("[DASHBOARD] Setting context to", expectedContext);
         setContextState({ context: expectedContext });
       }
     }
@@ -76,11 +76,11 @@ export const AutomationsDashboard = () => {
 
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
-    console.log('[DASHBOARD] handleEntitySelect called', { entityId });
-    
+    console.log("[DASHBOARD] handleEntitySelect called", { entityId });
+
     // Clear any active navigation target to ensure proper page reset
     clearTarget();
-    
+
     // Use setTimeout to ensure clearTarget is processed before state changes
     setTimeout(() => {
       setSelectedEntityId(entityId);
@@ -93,11 +93,11 @@ export const AutomationsDashboard = () => {
 
   // Handle filter selection
   const handleFilterSelect = (filter: "all" | "generic" | null) => {
-    console.log('[DASHBOARD] handleFilterSelect called', { filter });
-    
+    console.log("[DASHBOARD] handleFilterSelect called", { filter });
+
     // Clear any active navigation target to ensure proper page reset
     clearTarget();
-    
+
     // Use setTimeout to ensure clearTarget is processed before state changes
     setTimeout(() => {
       setSelectedFilter(filter);
@@ -110,12 +110,12 @@ export const AutomationsDashboard = () => {
 
   // Handle automation selection from global search
   const handleAutomationSelect = (automation: SearchResult) => {
-    console.log('[DASHBOARD] handleAutomationSelect called', {
+    console.log("[DASHBOARD] handleAutomationSelect called", {
       automationId: automation.id,
       entityId: automation.entityId,
       automationName: automation.name,
       currentSelectedEntityId: selectedEntityId,
-      currentSelectedFilter: selectedFilter
+      currentSelectedFilter: selectedFilter,
     });
 
     // Determinar o contexto correto baseado no entityId da automação
@@ -123,19 +123,19 @@ export const AutomationsDashboard = () => {
       // Automação genérica -> ir para aba "Genéricas"
       setSelectedEntityId(null);
       setSelectedFilter("generic");
-      console.log('[DASHBOARD] Navigating to generic context');
+      console.log("[DASHBOARD] Navigating to generic context");
     } else {
       // Automação específica -> ir para a entidade correspondente
       setSelectedEntityId(automation.entityId);
       setSelectedFilter("all");
-      console.log('[DASHBOARD] Navigating to entity context', automation.entityId);
+      console.log("[DASHBOARD] Navigating to entity context", automation.entityId);
     }
 
     setFilters({}); // Clear all filters to ensure the automation is visible
 
-    console.log('[DASHBOARD] State updated, calling setTargetAutomation', {
+    console.log("[DASHBOARD] State updated, calling setTargetAutomation", {
       newSelectedEntityId: automation.entityId === null ? null : automation.entityId,
-      newSelectedFilter: automation.entityId === null ? "generic" : "all"
+      newSelectedFilter: automation.entityId === null ? "generic" : "all",
     });
 
     // Use setTimeout to ensure state updates are applied before navigation
@@ -224,7 +224,7 @@ export const AutomationsDashboard = () => {
 
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>
-          <AutomationPaginationList
+          <AutomationList
             entityId={selectedFilter === "generic" ? null : selectedEntityId}
             status={filters.status}
             search={filters.search}

@@ -1,106 +1,106 @@
-# LaviPloo Project Structure
+# Estrutura do Projeto LaviPloo
 
-## Root Directory Organization
+## Organização do Diretório Raiz
 ```
 ├── app/                    # Next.js App Router
-│   ├── (dashboard)/       # Dashboard route group
-│   ├── (public)/          # Public pages (login)
-│   ├── api/               # API routes
-│   ├── globals.css        # Global styles
-│   └── layout.tsx         # Root layout
-├── components/            # React components
-├── lib/                   # Utility functions
-├── hooks/                 # Custom React hooks
-├── types/                 # TypeScript type definitions
-├── constants/             # Application constants
-├── stores/                # Zustand state stores
-├── validations/           # Zod validation schemas
-├── prisma/                # Database schema and migrations
-├── docker/                # Docker configuration files
-├── docs/                  # Project documentation
-└── public/                # Static assets
+│   ├── (dashboard)/       # Grupo de rotas do dashboard
+│   ├── (public)/          # Páginas públicas (login)
+│   ├── api/               # Rotas de API
+│   ├── globals.css        # Estilos globais
+│   └── layout.tsx         # Layout raiz
+├── components/            # Componentes React
+├── lib/                   # Funções utilitárias
+├── hooks/                 # Hooks React customizados
+├── types/                 # Definições de tipos TypeScript
+├── constants/             # Constantes da aplicação
+├── stores/                # Stores de estado Zustand
+├── validations/           # Schemas de validação Zod
+├── prisma/                # Schema e migrações do banco de dados
+├── docker/                # Arquivos de configuração Docker
+├── docs/                  # Documentação do projeto
+└── public/                # Assets estáticos
 ```
 
-## App Directory Structure
-- **Route Groups**: Use parentheses for logical grouping without affecting URL structure
-  - `(dashboard)/` - Protected dashboard pages
-  - `(public)/` - Public authentication pages
-- **API Routes**: All external API interactions through Next.js API routes
-  - `api/automations/` - Automation-related endpoints
-  - `api/integrations/` - Integration management endpoints
-  - `api/filters/` - Data filtering endpoints
-  - `api/auth/` - Authentication endpoints
+## Estrutura do Diretório App
+- **Grupos de Rotas**: Usar parênteses para agrupamento lógico sem afetar a estrutura de URL
+  - `(dashboard)/` - Páginas protegidas do dashboard
+  - `(public)/` - Páginas públicas de autenticação
+- **Rotas de API**: Todas as interações de API externas através de rotas Next.js API
+  - `api/automations/` - Endpoints relacionados a automações
+  - `api/integrations/` - Endpoints de gerenciamento de integrações
+  - `api/filters/` - Endpoints de filtragem de dados
+  - `api/auth/` - Endpoints de autenticação
 
-## Components Organization
+## Organização de Componentes
 ```
 components/
-├── ui/                    # shadcn/ui base components
-├── system/                # System-wide components (header, sidebar, etc.)
-├── automations/           # Automation-specific components
-├── integrations/          # Integration-specific components
-└── providers.tsx          # Context providers wrapper
+├── ui/                    # Componentes base shadcn/ui
+├── system/                # Componentes do sistema (header, sidebar, etc.)
+├── automations/           # Componentes específicos de automações
+├── integrations/          # Componentes específicos de integrações
+└── providers.tsx          # Wrapper de provedores de contexto
 ```
 
-## Naming Conventions
-- **Files & Folders**: kebab-case (`automation-card.tsx`, `deal-stages/`)
-- **Components**: PascalCase (`AutomationCard`)
-- **Functions & Variables**: camelCase (`getUserData`)
-- **Constants**: SCREAMING_SNAKE_CASE (`API_BASE_URL`)
-- **Types & Interfaces**: PascalCase (`UserData`, `ApiResponse`)
+## Convenções de Nomenclatura
+- **Arquivos e Pastas**: kebab-case (`automation-card.tsx`, `deal-stages/`)
+- **Componentes**: PascalCase (`AutomationCard`)
+- **Funções e Variáveis**: camelCase (`getUserData`)
+- **Constantes**: SCREAMING_SNAKE_CASE (`API_BASE_URL`)
+- **Tipos e Interfaces**: PascalCase (`UserData`, `ApiResponse`)
 
-## File Patterns
-- **API Routes**: `route.ts` in semantic folders
-- **Page Components**: `page.tsx` in route directories
-- **Layout Components**: `layout.tsx` for route-specific layouts
-- **Component Files**: Match component name (`automation-card.tsx` exports `AutomationCard`)
+## Padrões de Arquivo
+- **Rotas de API**: `route.ts` em pastas semânticas
+- **Componentes de Página**: `page.tsx` em diretórios de rota
+- **Componentes de Layout**: `layout.tsx` para layouts específicos de rota
+- **Arquivos de Componente**: Corresponder ao nome do componente (`automation-card.tsx` exporta `AutomationCard`)
 
-## Import Aliases
+## Aliases de Importação
 ```typescript
-@/*           # Root directory
-@/components  # Components directory
-@/lib         # Utility functions
-@/hooks       # Custom hooks
-@/types       # Type definitions
-@/constants   # Application constants
+@/*           # Diretório raiz
+@/components  # Diretório de componentes
+@/lib         # Funções utilitárias
+@/hooks       # Hooks customizados
+@/types       # Definições de tipos
+@/constants   # Constantes da aplicação
 ```
 
-## Key Directories
+## Diretórios Principais
 
 ### `/lib`
-- `handle-error.ts` - Centralized error handling utility
-- `utils.ts` - General utility functions
-- `auth.ts` - Authentication configuration
+- `handle-error.ts` - Utilitário centralizado de tratamento de erros
+- `utils.ts` - Funções utilitárias gerais
+- `auth.ts` - Configuração de autenticação
 
 ### `/hooks`
-- Custom React hooks using TanStack Query
-- Client-side data fetching and state management
+- Hooks React customizados usando TanStack Query
+- Busca de dados client-side e gerenciamento de estado
 
 ### `/types`
-- TypeScript interfaces and type definitions
-- API response types
-- Component prop types
+- Interfaces e definições de tipos TypeScript
+- Tipos de resposta de API
+- Tipos de props de componentes
 
 ### `/constants`
-- API endpoints and configuration
-- Application-wide constants
-- Environment-specific values
+- Endpoints de API e configuração
+- Constantes da aplicação
+- Valores específicos do ambiente
 
 ### `/validations`
-- Zod schemas for form and API validation
-- Input sanitization and type safety
+- Schemas Zod para validação de formulários e API
+- Sanitização de entrada e segurança de tipos
 
-## Docker Structure
+## Estrutura Docker
 ```
 docker/
-├── scripts/               # Database setup scripts
-├── postgres/             # PostgreSQL configuration
-└── docker-compose files  # Container orchestration
+├── scripts/               # Scripts de configuração do banco de dados
+├── postgres/             # Configuração PostgreSQL
+└── docker-compose files  # Orquestração de containers
 ```
 
-## Documentation Structure
+## Estrutura de Documentação
 ```
 docs/
-├── README.md             # Main documentation
-├── integrations/         # Integration guides
-└── ploomes/             # Ploomes API documentation
+├── README.md             # Documentação principal
+├── integrations/         # Guias de integração
+└── ploomes/             # Documentação da API Ploomes
 ```

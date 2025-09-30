@@ -1,14 +1,20 @@
-# LaviPloo Development Guidelines
+# Diretrizes de Desenvolvimento LaviPloo
 
-## API Integration Rules
-### Ploomes API Constraints
-- **CRITICAL**: Only GET requests allowed to Ploomes API
-- **No Cache**: Always use `cache: "no-cache"` for fresh data
-- **Authentication**: Include `User-Key: process.env.PLOOOMES_API_KEY` header
-- **Validation**: Always validate inputs with Zod schemas before API calls
-- **Error Handling**: Use `getErrorMessage` utility from `lib/handle-error.ts`
+## Comunicação e Idioma
+- **Idioma Principal**: Sempre iniciar conversas em português brasileiro (pt-BR)
+- **Contexto Universal**: Aplicar pt-BR independente do modo (Vibe, Spec, ou qualquer outro contexto)
+- **Consistência**: Manter toda comunicação em português durante toda a sessão
+- **Exceções**: Código, comentários técnicos e documentação de API podem permanecer em inglês quando apropriado
 
-### API Route Pattern
+## Regras de Integração de API
+### Restrições da API Ploomes
+- **CRÍTICO**: Apenas requisições GET permitidas para a API Ploomes
+- **Sem Cache**: Sempre usar `cache: "no-cache"` para dados frescos
+- **Autenticação**: Incluir header `User-Key: process.env.PLOOOMES_API_KEY`
+- **Validação**: Sempre validar inputs com schemas Zod antes das chamadas de API
+- **Tratamento de Erro**: Usar utilitário `getErrorMessage` de `lib/handle-error.ts`
+
+### Padrão de Rota de API
 ```typescript
 // app/api/example/route.ts
 import { NextRequest, NextResponse } from "next/server";
@@ -53,14 +59,14 @@ export async function GET(req: NextRequest) {
 }
 ```
 
-## Required Utilities
-### Error Handler (`lib/handle-error.ts`)
+## Utilitários Obrigatórios
+### Manipulador de Erro (`lib/handle-error.ts`)
 ```typescript
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { z } from "zod";
 
 export function getErrorMessage(err: unknown) {
-  const unknownError = "Something went wrong, please try again later.";
+  const unknownError = "Algo deu errado, tente novamente mais tarde.";
 
   if (err instanceof z.ZodError) {
     const errors = err.issues.map((issue) => {
@@ -81,28 +87,28 @@ export function getErrorMessage(err: unknown) {
 }
 ```
 
-## Script Management
-### Test Scripts Policy
-- **Default Behavior**: Remove all test scripts after development/debugging
-- **Exceptions**: Keep only scripts essential for:
-  - Deploy processes
-  - Database migrations
-  - Critical operations
-- **Language**: Always create scripts in TypeScript (.ts), never JavaScript (.js)
-- **Location**: Keep `scripts/` directory clean in production
-- **Cleanup**: Remove temporary test files before final commits
+## Gerenciamento de Scripts
+### Política de Scripts de Teste
+- **Comportamento Padrão**: Remover todos os scripts de teste após desenvolvimento/debug
+- **Exceções**: Manter apenas scripts essenciais para:
+  - Processos de deploy
+  - Migrações de banco de dados
+  - Operações críticas
+- **Linguagem**: Sempre criar scripts em TypeScript (.ts), nunca JavaScript (.js)
+- **Localização**: Manter diretório `scripts/` limpo em produção
+- **Limpeza**: Remover arquivos de teste temporários antes dos commits finais
 
-### Script Examples to Remove
-- `scripts/test-*.js` files
-- Debug utilities
-- Development-only helpers
-- API testing scripts
+### Exemplos de Scripts para Remover
+- Arquivos `scripts/test-*.js`
+- Utilitários de debug
+- Helpers apenas para desenvolvimento
+- Scripts de teste de API
 
-## Client-Side Data Fetching
-### TanStack Query Hooks
-- All client-side API consumption through custom hooks
-- Use TanStack Query for caching and state management
-- Follow the pattern: `use-[entity-name].ts`
+## Busca de Dados Client-Side
+### Hooks TanStack Query
+- Todo consumo de API client-side através de hooks customizados
+- Usar TanStack Query para cache e gerenciamento de estado
+- Seguir o padrão: `use-[nome-entidade].ts`
 
 ```typescript
 // hooks/use-automations.ts
@@ -113,21 +119,74 @@ export function useAutomations() {
     queryKey: ["automations"],
     queryFn: async () => {
       const response = await fetch("/api/automations");
-      if (!response.ok) throw new Error("Failed to fetch automations");
+      if (!response.ok) throw new Error("Falha ao buscar automações");
       return response.json();
     },
   });
 }
 ```
 
-## TypeScript Standards
-- **Strict Mode**: No `any` types allowed
-- **Type Safety**: Always define proper interfaces and types
-- **Validation**: Use Zod for runtime validation
-- **Error Handling**: Proper error types and handling
+## Organização de Componentes
+### Particionamento de Componentes Complexos
+- **Regra Geral**: Quando um componente ficar muito grande ou complexo, particione-o em um diretório com seu nome
+- **Estrutura**: Criar diretório com o nome do componente principal e dividir em sub-componentes
+- **Exemplo Prático**: `components/automations/automation-details/`
+  - `automation-details-panel.tsx` - Componente principal do painel
+  - `filter-conditions-display.tsx` - Sub-componente para exibir condições
+- **Benefícios**: Melhora legibilidade, manutenibilidade e reutilização de código
+- **Convenção**: Manter o arquivo principal com o nome do diretório + sufixo descritivo
 
-## Documentation References
-- **Complete Documentation**: `/docs/README.md`
-- **Better Auth Migration**: `/docs/integrations/better-auth-migration.md`
-- **Docker Setup**: `/docs/integrations/docker-setup.md`
-- **Ploomes API**: Use MCP Context7 `API Ploomes V2` or fallback to `/docs/ploomes/api-ploomes-v2-documentation.md`
+### Estrutura de Particionamento
+```
+components/
+├── automations/
+│   ├── automation-card.tsx          # Componente simples
+│   └── automation-details/          # Componente complexo particionado
+│       ├── automation-details-panel.tsx
+│       ├── filter-conditions-display.tsx
+│       └── index.ts                 # Barrel export (opcional)
+```
+
+## Padrões de Commit
+### Conventional Commits em Português
+- **Formato Obrigatório**: Usar Conventional Commits sempre em português brasileiro
+- **Sem Anotações de IA**: Nunca incluir menções de IA, assistente ou automação nas mensagens
+- **Estrutura**: `tipo(escopo): descrição`
+
+### Tipos de Commit Permitidos
+- `feat`: Nova funcionalidade
+- `fix`: Correção de bug
+- `docs`: Mudanças na documentação
+- `style`: Formatação, espaços em branco, etc.
+- `refactor`: Refatoração de código
+- `test`: Adição ou correção de testes
+- `chore`: Tarefas de manutenção, build, etc.
+
+### Exemplos de Commits Válidos
+```
+feat(automations): adiciona filtro por status nas automações
+fix(api): corrige validação de parâmetros na rota de integrações
+docs(readme): atualiza instruções de instalação
+style(components): ajusta espaçamento nos cards de automação
+refactor(hooks): simplifica lógica do useAutomations
+chore(deps): atualiza dependências do projeto
+```
+
+### Exemplos de Commits Inválidos
+```
+❌ feat: add new automation filter (AI-generated)
+❌ fix: correção automática via assistente
+❌ refactor: código melhorado pela IA
+```
+
+## Padrões TypeScript
+- **Modo Strict**: Tipos `any` não permitidos
+- **Segurança de Tipos**: Sempre definir interfaces e tipos adequados
+- **Validação**: Usar Zod para validação em tempo de execução
+- **Tratamento de Erro**: Tipos de erro adequados e tratamento
+
+## Referências de Documentação
+- **Documentação Completa**: `/docs/README.md`
+- **Migração Better Auth**: `/docs/integrations/better-auth-migration.md`
+- **Configuração Docker**: `/docs/integrations/docker-setup.md`
+- **API Ploomes**: Usar MCP Context7 `API Ploomes V2` ou fallback para `/docs/ploomes/api-ploomes-v2-documentation.md`

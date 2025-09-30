@@ -23,7 +23,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  GitBranch
+  GitBranch,
 } from "lucide-react";
 import type { Automation } from "@/types/automations";
 import { cn } from "@/lib/utils";
@@ -89,11 +89,10 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: Aut
     <Card
       ref={(el) => onRef?.(automation.id, el)}
       className={cn(
-        'hover:drop-shadow p-0 hover:cursor-pointer transition-all border-zinc-200 rounded-sm',
-        isHighlighted && 'ring-2 ring-rose-300 border-rose-200 bg-rose-50/50'
+        "hover:drop-shadow p-0 hover:cursor-pointer transition-all border-zinc-200 rounded-sm",
+        isHighlighted && "ring-2 ring-rose-300 border-rose-200 bg-rose-50/50"
       )}
-      onClick={() => onOpenDetails(automation.id)}
-    >
+      onClick={() => onOpenDetails(automation.id)}>
       <CardContent className='p-3'>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex items-start gap-2 min-w-0 flex-1'>
@@ -152,7 +151,7 @@ const PaginationControls = ({
   perPage,
   perPageOptions,
   setPerPage,
-  totalCount
+  totalCount,
 }: {
   currentPage: number;
   totalPages: number;
@@ -171,15 +170,12 @@ const PaginationControls = ({
   const endItem = Math.min(currentPage * perPage, totalCount);
 
   return (
-    <div className="flex items-center justify-between p-3 border-t border-zinc-200 bg-zinc-50">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-600">Itens por página:</span>
-          <Select
-            value={perPage.toString()}
-            onValueChange={(value) => setPerPage(Number(value))}
-          >
-            <SelectTrigger className="h-7 w-16 text-xs">
+    <div className='flex items-center justify-between p-3 border-t border-zinc-200 bg-zinc-50'>
+      <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-2'>
+          <span className='text-xs text-zinc-600'>Itens por página:</span>
+          <Select value={perPage.toString()} onValueChange={(value) => setPerPage(Number(value))}>
+            <SelectTrigger className='h-7 w-16 text-xs'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -191,68 +187,35 @@ const PaginationControls = ({
             </SelectContent>
           </Select>
         </div>
-        <div className="text-xs text-zinc-600">
+        <div className='text-xs text-zinc-600'>
           {startItem}-{endItem} de {totalCount} itens
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToFirstPage}
-          disabled={!hasPreviousPage}
-          className="h-7 w-7 p-0"
-        >
-          <ChevronsLeft className="h-3 w-3" />
+      <div className='flex items-center gap-1'>
+        <Button variant='outline' size='sm' onClick={goToFirstPage} disabled={!hasPreviousPage} className='h-7 w-7 p-0'>
+          <ChevronsLeft className='h-3 w-3' />
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPreviousPage}
-          disabled={!hasPreviousPage}
-          className="h-7 w-7 p-0"
-        >
-          <ChevronLeft className="h-3 w-3" />
+        <Button variant='outline' size='sm' onClick={goToPreviousPage} disabled={!hasPreviousPage} className='h-7 w-7 p-0'>
+          <ChevronLeft className='h-3 w-3' />
         </Button>
-        <div className="flex items-center gap-1 px-2">
-          <span className="text-xs text-zinc-600">
+        <div className='flex items-center gap-1 px-2'>
+          <span className='text-xs text-zinc-600'>
             Página {currentPage} de {totalPages}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextPage}
-          disabled={!hasNextPage}
-          className="h-7 w-7 p-0"
-        >
-          <ChevronRight className="h-3 w-3" />
+        <Button variant='outline' size='sm' onClick={goToNextPage} disabled={!hasNextPage} className='h-7 w-7 p-0'>
+          <ChevronRight className='h-3 w-3' />
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToLastPage}
-          disabled={!hasNextPage}
-          className="h-7 w-7 p-0"
-        >
-          <ChevronsRight className="h-3 w-3" />
+        <Button variant='outline' size='sm' onClick={goToLastPage} disabled={!hasNextPage} className='h-7 w-7 p-0'>
+          <ChevronsRight className='h-3 w-3' />
         </Button>
       </div>
     </div>
   );
 };
 
-export const AutomationPaginationList = ({
-  entityId,
-  status,
-  search,
-  createdBy,
-  dateFrom,
-  dateTo,
-  generic
-}: AutomationPaginationListProps) => {
-
+export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationPaginationListProps) => {
   // State for details panel
   const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
@@ -305,14 +268,14 @@ export const AutomationPaginationList = ({
   // Reset page when context changes (entityId or generic filter)
   // IMPORTANTE: Não resetar se skipPageReset estiver ativo (navegação de busca global)
   useEffect(() => {
-    console.log('[PAGINATION] Reset page useEffect triggered', {
+    console.log("[PAGINATION] Reset page useEffect triggered", {
       entityId,
       generic,
       skipPageReset,
       currentPage: page,
       targetAutomationId,
       targetEntityId,
-      hasActiveTarget: !!targetAutomationId
+      hasActiveTarget: !!targetAutomationId,
     });
 
     // Se não há target ativo, sempre permitir reset de página
@@ -320,26 +283,26 @@ export const AutomationPaginationList = ({
     const shouldSkipReset = targetAutomationId && skipPageReset;
 
     if (!shouldSkipReset) {
-      console.log('[PAGINATION] Resetting to page 1', {
-        reason: targetAutomationId ? 'no skipPageReset' : 'no active target'
+      console.log("[PAGINATION] Resetting to page 1", {
+        reason: targetAutomationId ? "no skipPageReset" : "no active target",
       });
       setPage(1);
     } else {
-      console.log('[PAGINATION] Skipping page reset (active target with skipPageReset=true)');
+      console.log("[PAGINATION] Skipping page reset (active target with skipPageReset=true)");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId, generic, skipPageReset, targetAutomationId]);
 
   // Handle navigation to specific automation from global search
   useEffect(() => {
-    console.log('[PAGINATION] Navigation useEffect triggered', {
+    console.log("[PAGINATION] Navigation useEffect triggered", {
       targetAutomationId,
       targetEntityId,
       shouldClearFilters,
       currentEntityId: entityId,
       currentPage: page,
       hasData: !!data?.automations,
-      currentHighlight: highlightedAutomationId
+      currentHighlight: highlightedAutomationId,
     });
 
     if (!targetAutomationId) return;
@@ -358,7 +321,7 @@ export const AutomationPaginationList = ({
       matchesContext = targetEntityId === entityId;
     }
 
-    console.log('[PAGINATION] Context check', {
+    console.log("[PAGINATION] Context check", {
       generic,
       targetEntityId,
       entityId,
@@ -366,31 +329,31 @@ export const AutomationPaginationList = ({
       explanation: generic
         ? `Generic mode: expecting null, got ${targetEntityId}`
         : entityId === null
-          ? `All mode: expecting non-null, got ${targetEntityId}`
-          : `Entity mode: expecting ${entityId}, got ${targetEntityId}`
+        ? `All mode: expecting non-null, got ${targetEntityId}`
+        : `Entity mode: expecting ${entityId}, got ${targetEntityId}`,
     });
 
     if (!matchesContext) {
-      console.log('[PAGINATION] Context does not match, skipping');
+      console.log("[PAGINATION] Context does not match, skipping");
       return;
     }
 
     // If we don't have data yet, wait
     if (!data?.automations) {
-      console.log('[PAGINATION] No data yet, waiting...');
+      console.log("[PAGINATION] No data yet, waiting...");
       return;
     }
 
     // Find automation in current page
-    const automationIndex = data.automations.findIndex(a => a.id === targetAutomationId);
-    console.log('[PAGINATION] Looking for automation in current page', {
+    const automationIndex = data.automations.findIndex((a) => a.id === targetAutomationId);
+    console.log("[PAGINATION] Looking for automation in current page", {
       automationIndex,
-      totalInPage: data.automations.length
+      totalInPage: data.automations.length,
     });
 
     if (automationIndex !== -1) {
       // Automation is on current page - highlight and scroll
-      console.log('[PAGINATION] Automation found on current page, highlighting');
+      console.log("[PAGINATION] Automation found on current page, highlighting");
       setHighlightedAutomationId(targetAutomationId);
       isNavigatingToAutomation.current = false;
 
@@ -398,7 +361,7 @@ export const AutomationPaginationList = ({
       setTimeout(() => {
         const element = automationRefs.current.get(targetAutomationId);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
         // Open details if requested
@@ -411,7 +374,7 @@ export const AutomationPaginationList = ({
       }, 100);
     } else if (!isNavigatingToAutomation.current) {
       // Automation not on current page - find correct page
-      console.log('[PAGINATION] Automation not on current page, finding correct page');
+      console.log("[PAGINATION] Automation not on current page, finding correct page");
       isNavigatingToAutomation.current = true;
 
       const findPageParams = {
@@ -423,34 +386,36 @@ export const AutomationPaginationList = ({
         createdBy: shouldClearFilters ? undefined : createdBy,
         dateFrom: shouldClearFilters ? undefined : dateFrom,
         dateTo: shouldClearFilters ? undefined : dateTo,
-        generic: shouldClearFilters ? undefined : generic
+        generic: shouldClearFilters ? undefined : generic,
       };
 
-      console.log('[PAGINATION] Calling findPage with params', findPageParams);
+      console.log("[PAGINATION] Calling findPage with params", findPageParams);
 
       // Se shouldClearFilters é true, usar filtros vazios
       // Caso contrário, usar os filtros ativos das props
-      findPage(findPageParams).then(result => {
-        console.log('[PAGINATION] findPage result', result);
-        if (result && result.page !== page) {
-          // Navigate to correct page
-          console.log(`[PAGINATION] Navigating from page ${page} to page ${result.page}`);
-          setPage(result.page);
-        } else if (!result) {
-          // Automation not found
-          console.warn('[PAGINATION] Automation not found in current context');
+      findPage(findPageParams)
+        .then((result) => {
+          console.log("[PAGINATION] findPage result", result);
+          if (result && result.page !== page) {
+            // Navigate to correct page
+            console.log(`[PAGINATION] Navigating from page ${page} to page ${result.page}`);
+            setPage(result.page);
+          } else if (!result) {
+            // Automation not found
+            console.warn("[PAGINATION] Automation not found in current context");
+            clearTarget();
+            isNavigatingToAutomation.current = false;
+          } else {
+            console.log("[PAGINATION] Already on correct page");
+          }
+        })
+        .catch((error) => {
+          console.error("[PAGINATION] Error finding automation page:", error);
           clearTarget();
           isNavigatingToAutomation.current = false;
-        } else {
-          console.log('[PAGINATION] Already on correct page');
-        }
-      }).catch(error => {
-        console.error('[PAGINATION] Error finding automation page:', error);
-        clearTarget();
-        isNavigatingToAutomation.current = false;
-      });
+        });
     } else {
-      console.log('[PAGINATION] Already navigating, skipping');
+      console.log("[PAGINATION] Already navigating, skipping");
     }
   }, [
     targetAutomationId,
@@ -470,22 +435,22 @@ export const AutomationPaginationList = ({
     search,
     createdBy,
     dateFrom,
-    dateTo
+    dateTo,
   ]);
 
   // Clear highlighted automation after exactly 10 seconds, independent of user interactions
   useEffect(() => {
     if (highlightedAutomationId) {
-      console.log('[PAGINATION] Starting 10-second highlight timer for automation', highlightedAutomationId);
+      console.log("[PAGINATION] Starting 10-second highlight timer for automation", highlightedAutomationId);
 
       const timer = setTimeout(() => {
-        console.log('[PAGINATION] Clearing highlight after 10 seconds for automation', highlightedAutomationId);
+        console.log("[PAGINATION] Clearing highlight after 10 seconds for automation", highlightedAutomationId);
         setHighlightedAutomationId(null);
         clearTarget();
       }, 10000); // Remove highlight after exactly 10 seconds
 
       return () => {
-        console.log('[PAGINATION] Highlight timer cleanup for automation', highlightedAutomationId);
+        console.log("[PAGINATION] Highlight timer cleanup for automation", highlightedAutomationId);
         clearTimeout(timer);
       };
     }
@@ -494,7 +459,7 @@ export const AutomationPaginationList = ({
   // Clear highlight when context changes (manual navigation)
   useEffect(() => {
     if (highlightedAutomationId && !targetAutomationId) {
-      console.log('[PAGINATION] Clearing highlight due to context change (manual navigation)');
+      console.log("[PAGINATION] Clearing highlight due to context change (manual navigation)");
       setHighlightedAutomationId(null);
     }
   }, [entityId, generic, highlightedAutomationId, targetAutomationId]);
@@ -504,7 +469,7 @@ export const AutomationPaginationList = ({
     return (
       <div className='space-y-2 p-3'>
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className='rounded-sm'>
+          <Card key={i} className='rounded-sm h-20'>
             <CardContent className='p-3'>
               <div className='flex items-start gap-3'>
                 <Skeleton className='h-3 w-3 mt-0.5' />
@@ -601,11 +566,7 @@ export const AutomationPaginationList = ({
       </div>
 
       {/* Details Panel */}
-      <AutomationDetailsPanel
-        automationId={selectedAutomationId}
-        open={detailsPanelOpen}
-        onOpenChange={handleCloseDetails}
-      />
+      <AutomationDetailsPanel automationId={selectedAutomationId} open={detailsPanelOpen} onOpenChange={handleCloseDetails} />
     </>
   );
 };
