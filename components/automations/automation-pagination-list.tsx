@@ -34,14 +34,17 @@ interface AutomationPaginationListProps {
   dateFrom?: string;
   dateTo?: string;
   generic?: boolean;
+  highlightedAutomationId?: number;
+  onAutomationHighlighted?: () => void;
 }
 
 interface AutomationItemProps {
   automation: Automation;
   onOpenDetails: (automationId: number) => void;
+  isHighlighted?: boolean;
 }
 
-const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
+const AutomationItem = ({ automation, onOpenDetails, isHighlighted }: AutomationItemProps) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -83,7 +86,10 @@ const AutomationItem = ({ automation, onOpenDetails }: AutomationItemProps) => {
 
   return (
     <Card
-      className='hover:drop-shadow p-0 hover:cursor-pointer transition-shadow border-zinc-200 rounded-sm'
+      className={cn(
+        'hover:drop-shadow p-0 hover:cursor-pointer transition-all border-zinc-200 rounded-sm',
+        isHighlighted && 'ring-2 ring-rose-300 border-rose-200 bg-rose-50/50'
+      )}
       onClick={() => onOpenDetails(automation.id)}
     >
       <CardContent className='p-3'>
@@ -235,7 +241,17 @@ const PaginationControls = ({
   );
 };
 
-export const AutomationPaginationList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationPaginationListProps) => {
+export const AutomationPaginationList = ({
+  entityId,
+  status,
+  search,
+  createdBy,
+  dateFrom,
+  dateTo,
+  generic,
+  highlightedAutomationId,
+  onAutomationHighlighted
+}: AutomationPaginationListProps) => {
 
   // State for details panel
   const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
@@ -279,6 +295,17 @@ export const AutomationPaginationList = ({ entityId, status, search, createdBy, 
   useEffect(() => {
     setPage(1);
   }, [entityId, generic]);
+
+  // Clear highlighted automation after a delay
+  useEffect(() => {
+    if (highlightedAutomationId && onAutomationHighlighted) {
+      const timer = setTimeout(() => {
+        onAutomationHighlighted();
+      }, 3000); // Remove highlight after 3 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedAutomationId, onAutomationHighlighted]);
 
   // Loading state
   if (isLoading) {
@@ -349,6 +376,7 @@ export const AutomationPaginationList = ({ entityId, status, search, createdBy, 
                 key={automation.id}
                 automation={automation}
                 onOpenDetails={handleOpenDetails}
+                isHighlighted={highlightedAutomationId === automation.id}
               />
             ))}
           </div>

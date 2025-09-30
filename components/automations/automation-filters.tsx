@@ -61,7 +61,7 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName }: Autom
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
-          <h2 className='text-lg font-semibold text-zinc-800'>Automações {selectedEntityName ? `de ${selectedEntityName}` : ""}</h2>
+          <h2 className='text-base font-medium text-zinc-700'>Filtros contextuais {selectedEntityName ? `para ${selectedEntityName}` : ""}</h2>
           {hasActiveFilters && (
             <Badge variant='secondary' className='text-xs'>
               {activeFiltersCount} filtro{activeFiltersCount > 1 ? "s" : ""}
@@ -72,16 +72,18 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName }: Autom
 
       {/* Main filters */}
       <div className='flex flex-col sm:flex-row gap-2'>
-        {/* Search */}
-        <div className='relative flex-1'>
-          <Search className='absolute left-2 top-2 h-3 w-3 text-zinc-400' />
-          <Input
-            placeholder='Buscar automações...'
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className='pl-7 h-7 text-xs rounded-sm'
-          />
-        </div>
+        {/* Context Search - Only show if there's a selected entity or filter */}
+        {(selectedEntityName || search) && (
+          <div className='relative flex-1'>
+            <Search className='absolute left-2 top-2 h-3 w-3 text-zinc-400' />
+            <Input
+              placeholder={`Buscar dentro de ${selectedEntityName || 'contexto atual'}...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className='pl-7 h-7 text-xs rounded-sm'
+            />
+          </div>
+        )}
 
         {/* Status Filter */}
         <Select value={status} onValueChange={setStatus}>

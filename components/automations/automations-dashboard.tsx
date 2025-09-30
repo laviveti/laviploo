@@ -5,10 +5,12 @@ import { useQueryStates, parseAsString, parseAsInteger } from "nuqs";
 import { AutomationEntitiesSidebar } from "./automation-entities-sidebar";
 import { AutomationFilters } from "./automation-filters";
 import { AutomationPaginationList } from "./automation-pagination-list";
+import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Bot } from "lucide-react";
+import type { SearchResult } from "@/app/api/automations/search/route";
 
 interface AutomationFilters {
   search?: string;
@@ -36,6 +38,7 @@ export const AutomationsDashboard = () => {
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'generic' | null>('all');
   const [filters, setFilters] = useState<AutomationFilters>({});
+  const [selectedAutomation, setSelectedAutomation] = useState<SearchResult | null>(null);
 
   // Query param para contexto (espelho do estado)
   const [{ context }, setContextState] = useQueryStates({
@@ -79,6 +82,15 @@ export const AutomationsDashboard = () => {
       // When selecting generic, clear entity selection
       setSelectedEntityId(null);
     }
+  };
+
+  // Handle automation selection from global search
+  const handleAutomationSelect = (automation: SearchResult) => {
+    setSelectedAutomation(automation);
+    // Clear current filters and selections to show the automation in its context
+    setSelectedEntityId(automation.entityId);
+    setSelectedFilter('all');
+    setFilters({}); // Clear all filters to ensure the automation is visible
   };
 
   // Fetch entity counts
@@ -142,7 +154,19 @@ export const AutomationsDashboard = () => {
 
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
-        {/* Filtros */}
+        {/* Global Search */}
+        <div className='bg-white border-b border-zinc-200 p-3'>
+          <div className='flex items-center justify-between mb-3'>
+            <h1 className='text-xl font-semibold text-zinc-900'>Automações</h1>
+          </div>
+          <GlobalAutomationSearch
+            onAutomationSelect={handleAutomationSelect}
+            placeholder="Busque automações em qualquer lugar..."
+            className="max-w-md"
+          />
+        </div>
+
+        {/* Filtros Contextuais */}
         <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} />
 
         {/* Lista de Automações */}
@@ -155,6 +179,8 @@ export const AutomationsDashboard = () => {
             dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
             generic={selectedFilter === 'generic'}
+            highlightedAutomationId={selectedAutomation?.id}
+            onAutomationHighlighted={() => setSelectedAutomation(null)}
           />
         </div>
       </div>
