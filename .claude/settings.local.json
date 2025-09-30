@@ -24,7 +24,8 @@
       "Bash(node:*)",
       "Bash(curl:*)",
       "Bash(pnpm list:*)",
-      "Bash(del \"components\\automations\\automation-infinite-list.tsx\")"
+      "Bash(del \"components\\automations\\automation-infinite-list.tsx\")",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

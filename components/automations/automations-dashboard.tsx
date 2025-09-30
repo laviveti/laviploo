@@ -8,8 +8,6 @@ import { AutomationPaginationList } from "./automation-pagination-list";
 import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Bot } from "lucide-react";
 import type { SearchResult } from "@/app/api/automations/search/route";
 
 interface AutomationFilters {
@@ -36,26 +34,24 @@ const ENTITY_NAMES: Record<number, string> = {
 export const AutomationsDashboard = () => {
   // Estado local original (funcionava)
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'generic' | null>('all');
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "generic" | null>("all");
   const [filters, setFilters] = useState<AutomationFilters>({});
   const [selectedAutomation, setSelectedAutomation] = useState<SearchResult | null>(null);
 
   // Query param para contexto (espelho do estado)
   const [{ context }, setContextState] = useQueryStates({
-    context: parseAsString.withDefault('all')
+    context: parseAsString.withDefault("all"),
   });
-
-
 
   // Sync URL with state changes
   useEffect(() => {
-    if (selectedFilter === 'generic') {
-      if (context !== 'generic') {
-        setContextState({ context: 'generic' });
+    if (selectedFilter === "generic") {
+      if (context !== "generic") {
+        setContextState({ context: "generic" });
       }
     } else if (selectedEntityId === null) {
-      if (context !== 'all') {
-        setContextState({ context: 'all' });
+      if (context !== "all") {
+        setContextState({ context: "all" });
       }
     } else {
       const expectedContext = `entity-${selectedEntityId}`;
@@ -65,20 +61,19 @@ export const AutomationsDashboard = () => {
     }
   }, [selectedEntityId, selectedFilter, context, setContextState]);
 
-
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
     setSelectedEntityId(entityId);
     if (entityId !== null) {
       // When selecting an entity, clear generic filter
-      setSelectedFilter('all');
+      setSelectedFilter("all");
     }
   };
 
   // Handle filter selection
-  const handleFilterSelect = (filter: 'all' | 'generic' | null) => {
+  const handleFilterSelect = (filter: "all" | "generic" | null) => {
     setSelectedFilter(filter);
-    if (filter === 'generic') {
+    if (filter === "generic") {
       // When selecting generic, clear entity selection
       setSelectedEntityId(null);
     }
@@ -89,7 +84,7 @@ export const AutomationsDashboard = () => {
     setSelectedAutomation(automation);
     // Clear current filters and selections to show the automation in its context
     setSelectedEntityId(automation.entityId);
-    setSelectedFilter('all');
+    setSelectedFilter("all");
     setFilters({}); // Clear all filters to ensure the automation is visible
   };
 
@@ -142,9 +137,9 @@ export const AutomationsDashboard = () => {
   return (
     <div className='h-full flex border bg-zinc-50'>
       {/* Sidebar de Entidades */}
-      <AutomationEntitiesSidebar 
-        selectedEntityId={selectedEntityId} 
-        onEntitySelect={handleEntitySelect} 
+      <AutomationEntitiesSidebar
+        selectedEntityId={selectedEntityId}
+        onEntitySelect={handleEntitySelect}
         entityCounts={entityCounts}
         genericCount={genericCount}
         totalCount={totalCount}
@@ -161,8 +156,8 @@ export const AutomationsDashboard = () => {
           </div>
           <GlobalAutomationSearch
             onAutomationSelect={handleAutomationSelect}
-            placeholder="Busque automações em qualquer lugar..."
-            className="max-w-md"
+            placeholder='Busque automações em qualquer lugar...'
+            className='max-w-md'
           />
         </div>
 
@@ -172,13 +167,13 @@ export const AutomationsDashboard = () => {
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>
           <AutomationPaginationList
-            entityId={selectedFilter === 'generic' ? null : selectedEntityId}
+            entityId={selectedFilter === "generic" ? null : selectedEntityId}
             status={filters.status}
             search={filters.search}
             createdBy={filters.createdBy}
             dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
-            generic={selectedFilter === 'generic'}
+            generic={selectedFilter === "generic"}
             highlightedAutomationId={selectedAutomation?.id}
             onAutomationHighlighted={() => setSelectedAutomation(null)}
           />
