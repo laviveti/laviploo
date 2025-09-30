@@ -59,7 +59,7 @@ export interface PloomesUser {
 export interface Automation {
   id: number;
   name: string;
-  entityId: number;
+  entityId: number | null;
   entityName?: string;
   triggerId: number;
   triggerName?: string;

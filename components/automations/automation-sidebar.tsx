@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, Clock, Settings } from "lucide-react";
 import { AUTOMATION_ENTITIES } from "@/constants/automation-entities";
 
-interface AutomationEntitiesSidebarProps {
+interface AutomationSidebarProps {
   selectedEntityId: number | null;
   onEntitySelect: (entityId: number | null) => void;
   entityCounts?: Record<number, { total: number; active: number }>;
@@ -15,7 +15,7 @@ interface AutomationEntitiesSidebarProps {
   onFilterSelect?: (filter: 'all' | 'generic' | null) => void;
 }
 
-export const AutomationEntitiesSidebar = ({
+export const AutomationSidebar = ({
   selectedEntityId,
   onEntitySelect,
   entityCounts = {},
@@ -23,7 +23,7 @@ export const AutomationEntitiesSidebar = ({
   totalCount = 0,
   selectedFilter = null,
   onFilterSelect
-}: AutomationEntitiesSidebarProps) => {
+}: AutomationSidebarProps) => {
   return (
     <div className="w-64 bg-white border-r border-zinc-200 h-full">
       <div className="p-3 border-b border-zinc-100 space-y-1">

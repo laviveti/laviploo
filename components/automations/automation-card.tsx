@@ -68,7 +68,8 @@ export const AutomationCard = ({ automation }: AutomationCardProps) => {
     }
   };
 
-  const getEntityIcon = (entityId: number) => {
+  const getEntityIcon = (entityId: number | null) => {
+    if (entityId === null) return <Zap className='h-4 w-4' />;
     switch (entityId) {
       case 1: return <Users className='h-4 w-4' />; // Contatos
       case 2: return <Bot className='h-4 w-4' />; // Negócios

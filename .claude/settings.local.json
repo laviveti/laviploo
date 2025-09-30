@@ -26,7 +26,8 @@
       "Bash(pnpm list:*)",
       "Bash(del \"components\\automations\\automation-infinite-list.tsx\")",
       "Bash(mkdir:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: melhora busca global de automações\n\n- Implementa busca por múltiplos termos independentes\n- Adiciona scoring para priorizar resultados com mais matches\n- Corrige bug de \"Nenhuma automação encontrada\" durante loading\n- Suporta busca com 1 caractere (incluindo caracteres especiais como \"[\")\n- Melhora highlight para destacar todos os termos encontrados\n- Corrige pluralização de \"automação/automações\"\n- Aumenta limite de resultados de 50 para 100\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: melhora busca global de automações\n\n- Implementa busca por múltiplos termos independentes\n- Adiciona scoring para priorizar resultados com mais matches\n- Corrige bug de \"Nenhuma automação encontrada\" durante loading\n- Suporta busca com 1 caractere (incluindo caracteres especiais como \"[\")\n- Melhora highlight para destacar todos os termos encontrados\n- Corrige pluralização de \"automação/automações\"\n- Aumenta limite de resultados de 50 para 100\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(pnpm tsx:*)"
     ],
     "deny": [],
     "ask": []

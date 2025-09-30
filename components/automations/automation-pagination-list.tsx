@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useAutomationsPagination } from "@/hooks/use-automations-pagination";
+import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
+import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,17 +36,16 @@ interface AutomationPaginationListProps {
   dateFrom?: string;
   dateTo?: string;
   generic?: boolean;
-  highlightedAutomationId?: number;
-  onAutomationHighlighted?: () => void;
 }
 
 interface AutomationItemProps {
   automation: Automation;
   onOpenDetails: (automationId: number) => void;
   isHighlighted?: boolean;
+  onRef?: (id: number, element: HTMLDivElement | null) => void;
 }
 
-const AutomationItem = ({ automation, onOpenDetails, isHighlighted }: AutomationItemProps) => {
+const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: AutomationItemProps) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -86,6 +87,7 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted }: Automation
 
   return (
     <Card
+      ref={(el) => onRef?.(automation.id, el)}
       className={cn(
         'hover:drop-shadow p-0 hover:cursor-pointer transition-all border-zinc-200 rounded-sm',
         isHighlighted && 'ring-2 ring-rose-300 border-rose-200 bg-rose-50/50'
@@ -248,14 +250,23 @@ export const AutomationPaginationList = ({
   createdBy,
   dateFrom,
   dateTo,
-  generic,
-  highlightedAutomationId,
-  onAutomationHighlighted
+  generic
 }: AutomationPaginationListProps) => {
 
   // State for details panel
   const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+  const [highlightedAutomationId, setHighlightedAutomationId] = useState<number | null>(null);
+
+  // Zustand store for navigation
+  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } = useAutomationNavigationStore();
+
+  // Hook to find automation page
+  const { findPage } = useFindAutomationPage();
+
+  // Refs for scroll
+  const automationRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const isNavigatingToAutomation = useRef(false);
 
   const handleOpenDetails = useCallback((automationId: number) => {
     setSelectedAutomationId(automationId);
@@ -292,20 +303,201 @@ export const AutomationPaginationList = ({
   });
 
   // Reset page when context changes (entityId or generic filter)
+  // IMPORTANTE: Não resetar se skipPageReset estiver ativo (navegação de busca global)
   useEffect(() => {
-    setPage(1);
-  }, [entityId, generic]);
+    console.log('[PAGINATION] Reset page useEffect triggered', {
+      entityId,
+      generic,
+      skipPageReset,
+      currentPage: page,
+      targetAutomationId,
+      targetEntityId,
+      hasActiveTarget: !!targetAutomationId
+    });
 
-  // Clear highlighted automation after a delay
-  useEffect(() => {
-    if (highlightedAutomationId && onAutomationHighlighted) {
-      const timer = setTimeout(() => {
-        onAutomationHighlighted();
-      }, 3000); // Remove highlight after 3 seconds
+    // Se não há target ativo, sempre permitir reset de página
+    // Se há target ativo, respeitar o skipPageReset
+    const shouldSkipReset = targetAutomationId && skipPageReset;
 
-      return () => clearTimeout(timer);
+    if (!shouldSkipReset) {
+      console.log('[PAGINATION] Resetting to page 1', {
+        reason: targetAutomationId ? 'no skipPageReset' : 'no active target'
+      });
+      setPage(1);
+    } else {
+      console.log('[PAGINATION] Skipping page reset (active target with skipPageReset=true)');
     }
-  }, [highlightedAutomationId, onAutomationHighlighted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityId, generic, skipPageReset, targetAutomationId]);
+
+  // Handle navigation to specific automation from global search
+  useEffect(() => {
+    console.log('[PAGINATION] Navigation useEffect triggered', {
+      targetAutomationId,
+      targetEntityId,
+      shouldClearFilters,
+      currentEntityId: entityId,
+      currentPage: page,
+      hasData: !!data?.automations,
+      currentHighlight: highlightedAutomationId
+    });
+
+    if (!targetAutomationId) return;
+
+    // Check if target automation is in current entity context
+    let matchesContext = false;
+
+    if (generic) {
+      // Modo genérico: só aceita automações genéricas (targetEntityId === null)
+      matchesContext = targetEntityId === null;
+    } else if (entityId === null) {
+      // Modo "all": aceita qualquer automação não-genérica
+      matchesContext = targetEntityId !== null;
+    } else {
+      // Modo entidade específica: deve corresponder exatamente
+      matchesContext = targetEntityId === entityId;
+    }
+
+    console.log('[PAGINATION] Context check', {
+      generic,
+      targetEntityId,
+      entityId,
+      matchesContext,
+      explanation: generic
+        ? `Generic mode: expecting null, got ${targetEntityId}`
+        : entityId === null
+          ? `All mode: expecting non-null, got ${targetEntityId}`
+          : `Entity mode: expecting ${entityId}, got ${targetEntityId}`
+    });
+
+    if (!matchesContext) {
+      console.log('[PAGINATION] Context does not match, skipping');
+      return;
+    }
+
+    // If we don't have data yet, wait
+    if (!data?.automations) {
+      console.log('[PAGINATION] No data yet, waiting...');
+      return;
+    }
+
+    // Find automation in current page
+    const automationIndex = data.automations.findIndex(a => a.id === targetAutomationId);
+    console.log('[PAGINATION] Looking for automation in current page', {
+      automationIndex,
+      totalInPage: data.automations.length
+    });
+
+    if (automationIndex !== -1) {
+      // Automation is on current page - highlight and scroll
+      console.log('[PAGINATION] Automation found on current page, highlighting');
+      setHighlightedAutomationId(targetAutomationId);
+      isNavigatingToAutomation.current = false;
+
+      // Scroll to automation after render
+      setTimeout(() => {
+        const element = automationRefs.current.get(targetAutomationId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Open details if requested
+        if (shouldOpenDetails) {
+          handleOpenDetails(targetAutomationId);
+        }
+
+        // Clear highlight after 10 seconds (handled by separate useEffect)
+        // Don't clear here to avoid conflicts
+      }, 100);
+    } else if (!isNavigatingToAutomation.current) {
+      // Automation not on current page - find correct page
+      console.log('[PAGINATION] Automation not on current page, finding correct page');
+      isNavigatingToAutomation.current = true;
+
+      const findPageParams = {
+        automationId: targetAutomationId,
+        visualEntityId: targetEntityId,
+        perPage,
+        status: shouldClearFilters ? undefined : status,
+        search: shouldClearFilters ? undefined : search,
+        createdBy: shouldClearFilters ? undefined : createdBy,
+        dateFrom: shouldClearFilters ? undefined : dateFrom,
+        dateTo: shouldClearFilters ? undefined : dateTo,
+        generic: shouldClearFilters ? undefined : generic
+      };
+
+      console.log('[PAGINATION] Calling findPage with params', findPageParams);
+
+      // Se shouldClearFilters é true, usar filtros vazios
+      // Caso contrário, usar os filtros ativos das props
+      findPage(findPageParams).then(result => {
+        console.log('[PAGINATION] findPage result', result);
+        if (result && result.page !== page) {
+          // Navigate to correct page
+          console.log(`[PAGINATION] Navigating from page ${page} to page ${result.page}`);
+          setPage(result.page);
+        } else if (!result) {
+          // Automation not found
+          console.warn('[PAGINATION] Automation not found in current context');
+          clearTarget();
+          isNavigatingToAutomation.current = false;
+        } else {
+          console.log('[PAGINATION] Already on correct page');
+        }
+      }).catch(error => {
+        console.error('[PAGINATION] Error finding automation page:', error);
+        clearTarget();
+        isNavigatingToAutomation.current = false;
+      });
+    } else {
+      console.log('[PAGINATION] Already navigating, skipping');
+    }
+  }, [
+    targetAutomationId,
+    targetEntityId,
+    shouldClearFilters, // Adicionar dependência para reagir a mudanças
+    data,
+    entityId,
+    generic,
+    shouldOpenDetails,
+    handleOpenDetails,
+    clearTarget,
+    findPage,
+    perPage,
+    page,
+    setPage,
+    status,
+    search,
+    createdBy,
+    dateFrom,
+    dateTo
+  ]);
+
+  // Clear highlighted automation after exactly 10 seconds, independent of user interactions
+  useEffect(() => {
+    if (highlightedAutomationId) {
+      console.log('[PAGINATION] Starting 10-second highlight timer for automation', highlightedAutomationId);
+
+      const timer = setTimeout(() => {
+        console.log('[PAGINATION] Clearing highlight after 10 seconds for automation', highlightedAutomationId);
+        setHighlightedAutomationId(null);
+        clearTarget();
+      }, 10000); // Remove highlight after exactly 10 seconds
+
+      return () => {
+        console.log('[PAGINATION] Highlight timer cleanup for automation', highlightedAutomationId);
+        clearTimeout(timer);
+      };
+    }
+  }, [highlightedAutomationId, clearTarget]);
+
+  // Clear highlight when context changes (manual navigation)
+  useEffect(() => {
+    if (highlightedAutomationId && !targetAutomationId) {
+      console.log('[PAGINATION] Clearing highlight due to context change (manual navigation)');
+      setHighlightedAutomationId(null);
+    }
+  }, [entityId, generic, highlightedAutomationId, targetAutomationId]);
 
   // Loading state
   if (isLoading) {
@@ -377,6 +569,13 @@ export const AutomationPaginationList = ({
                 automation={automation}
                 onOpenDetails={handleOpenDetails}
                 isHighlighted={highlightedAutomationId === automation.id}
+                onRef={(id, element) => {
+                  if (element) {
+                    automationRefs.current.set(id, element);
+                  } else {
+                    automationRefs.current.delete(id);
+                  }
+                }}
               />
             ))}
           </div>

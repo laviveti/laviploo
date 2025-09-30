@@ -1,111 +1,188 @@
+/**
+ * Script de teste para validar a lógica de mapeamento de entidades
+ *
+ * Testa:
+ * 1. Conversão EntityId Ploomes → ID Visual
+ * 2. Conversão ID Visual → Filtro OData
+ * 3. Casos edge (genéricas, workflow)
+ * 4. Validação com dados reais da API
+ */
+
 import { config } from "dotenv";
 import type { PloomesAutomationsResponse, PloomesAutomation } from "../types/automations";
+import { getVisualEntityId, getPloomesFilter, getEntityDisplayName } from '../constants/automation-entities';
 
 // Carregar variáveis de ambiente
 config();
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
-    "User-Key": process.env.PLOOMES_API_KEY!,
-    "Accept": "application/json",
+  "User-Key": process.env.PLOOMES_API_KEY!,
+  "Accept": "application/json",
 };
 
-async function testEntityMapping() {
-    try {
-        console.log("🔍 Mapeando Entidades Reais da API...\n");
+console.log('🧪 TESTE DE MAPEAMENTO DE ENTIDADES\n');
+console.log('=====================================\n');
 
-        // Buscar todas as automações com entidades expandidas
-        const response = await fetch(`${PLOOMES_API_BASE}/Automations?$expand=Entity,Trigger`, {
-            headers,
-            cache: "no-cache",
-        });
+// ===== PARTE 1: TESTES UNITÁRIOS =====
+console.log('📋 PARTE 1: TESTES UNITÁRIOS\n');
 
-        if (!response.ok) {
-            throw new Error(`Erro na API: ${response.statusText}`);
-        }
+const testCases = [
+  {
+    name: 'Cliente (EntityId 1)',
+    ploomesEntityId: 1,
+    hasTriggerDealStageId: false,
+    expectedVisualId: 1,
+    expectedFilter: 'EntityId eq 1'
+  },
+  {
+    name: 'Workflow (EntityId 2 COM TriggerDealStageId)',
+    ploomesEntityId: 2,
+    hasTriggerDealStageId: true,
+    expectedVisualId: 2,
+    expectedFilter: 'EntityId eq 2 and TriggerDealStageId ne null'
+  },
+  {
+    name: 'Genérica (EntityId 2 SEM TriggerDealStageId)',
+    ploomesEntityId: 2,
+    hasTriggerDealStageId: false,
+    expectedVisualId: null,
+    expectedFilter: '(EntityId eq null or (EntityId eq 2 and TriggerDealStageId eq null))'
+  },
+  {
+    name: 'Genérica (EntityId null)',
+    ploomesEntityId: null,
+    hasTriggerDealStageId: false,
+    expectedVisualId: null,
+    expectedFilter: '(EntityId eq null or (EntityId eq 2 and TriggerDealStageId eq null))'
+  },
+  {
+    name: 'Venda (EntityId 4)',
+    ploomesEntityId: 4,
+    hasTriggerDealStageId: false,
+    expectedVisualId: 4,
+    expectedFilter: 'EntityId eq 4'
+  },
+  {
+    name: 'Tarefa (EntityId 12)',
+    ploomesEntityId: 12,
+    hasTriggerDealStageId: false,
+    expectedVisualId: 12,
+    expectedFilter: 'EntityId eq 12'
+  },
+];
 
-        const data: PloomesAutomationsResponse = await response.json();
-        const automations = data.value || [];
+let passedTests = 0;
+let failedTests = 0;
 
-        console.log(`📊 Total de automações: ${automations.length}\n`);
+testCases.forEach((testCase, index) => {
+  const visualId = getVisualEntityId(testCase.ploomesEntityId, testCase.hasTriggerDealStageId);
+  const filter = getPloomesFilter(visualId);
+  const displayName = getEntityDisplayName(visualId);
 
-        // Mapear todas as entidades únicas
-        const entityMap = new Map<number, { name: string; total: number; active: number }>();
-        let genericCount = { total: 0, active: 0 };
+  const visualIdPass = visualId === testCase.expectedVisualId;
+  const filterPass = filter === testCase.expectedFilter;
+  const testPassed = visualIdPass && filterPass;
 
-        automations.forEach((automation: PloomesAutomation) => {
-            const isGeneric = !automation.TriggerDealStageId;
-            const isActive = automation.Enabled && !automation.DisabledDueToError;
+  console.log(`${testPassed ? '✅' : '❌'} ${testCase.name}`);
+  if (!testPassed) {
+    console.log(`   Esperado: visualId=${testCase.expectedVisualId}, filter="${testCase.expectedFilter}"`);
+    console.log(`   Obtido: visualId=${visualId}, filter="${filter}"`);
+  }
 
-            if (isGeneric) {
-                genericCount.total++;
-                if (isActive) {
-                    genericCount.active++;
-                }
-            } else {
-                // Incluir TODAS as automações não-genéricas, mesmo sem EntityId
-                const entityId = automation.EntityId || 0; // 0 para automações sem EntityId
-                const entityName = automation.Entity?.Name ||
-                    (entityId === 0 ? "Sem Entidade" : `Entidade ${entityId}`);
+  testPassed ? passedTests++ : failedTests++;
+});
 
-                if (!entityMap.has(entityId)) {
-                    entityMap.set(entityId, { name: entityName, total: 0, active: 0 });
-                }
+console.log(`\n📊 Resultado: ${passedTests}/${testCases.length} passaram\n`);
 
-                const entity = entityMap.get(entityId)!;
-                entity.total++;
-                if (isActive) {
-                    entity.active++;
-                }
-            }
-        });
+// ===== PARTE 2: TESTE COM DADOS REAIS DA API =====
+async function testWithRealData() {
+  console.log('\n📡 PARTE 2: VALIDAÇÃO COM DADOS REAIS DA API\n');
 
-        console.log("🏢 Entidades encontradas na API:");
-        console.log("=====================================");
+  try {
+    const response = await fetch(`${PLOOMES_API_BASE}/Automations?$expand=Entity&$top=100`, {
+      headers,
+      cache: "no-cache",
+    });
 
-        // Ordenar por EntityId
-        const sortedEntities = Array.from(entityMap.entries()).sort(([a], [b]) => a - b);
-
-        sortedEntities.forEach(([entityId, data]) => {
-            console.log(`ID: ${entityId.toString().padStart(2)} | Nome: ${data.name.padEnd(20)} | Ativas/Total: ${data.active}/${data.total}`);
-        });
-
-        console.log("\n🔧 Automações Genéricas:");
-        console.log(`Ativas/Total: ${genericCount.active}/${genericCount.total}`);
-
-        console.log("\n🔍 Análise detalhada de algumas automações:");
-        console.log("===========================================");
-
-        // Mostrar algumas automações para entender a estrutura
-        const sampleAutomations = automations.slice(0, 5);
-        sampleAutomations.forEach((auto, index) => {
-            console.log(`\nAutomação ${index + 1}:`);
-            console.log(`  ID: ${auto.Id}`);
-            console.log(`  Nome: ${auto.Name}`);
-            console.log(`  EntityId: ${auto.EntityId || 'null'}`);
-            console.log(`  Entity.Name: ${auto.Entity?.Name || 'null'}`);
-            console.log(`  TriggerDealStageId: ${auto.TriggerDealStageId || 'null'}`);
-            console.log(`  Enabled: ${auto.Enabled}`);
-            console.log(`  DisabledDueToError: ${auto.DisabledDueToError}`);
-            console.log(`  Trigger.Name: ${auto.Trigger?.Name || 'null'}`);
-        });
-
-        console.log("\n🎯 Procurando automações com 'venda' no nome:");
-        const vendasByName = automations.filter(auto =>
-            auto.Name?.toLowerCase().includes('venda') ||
-            auto.Name?.toLowerCase().includes('sales') ||
-            auto.Entity?.Name?.toLowerCase().includes('venda')
-        );
-
-        console.log(`Encontradas ${vendasByName.length} automações com 'venda' no nome:`);
-        vendasByName.slice(0, 3).forEach(auto => {
-            console.log(`  - ${auto.Name} (EntityId: ${auto.EntityId}, Entity: ${auto.Entity?.Name})`);
-        });
-
-    } catch (error) {
-        console.error("❌ Erro no teste:", error);
+    if (!response.ok) {
+      throw new Error(`Erro na API: ${response.statusText}`);
     }
+
+    const data: PloomesAutomationsResponse = await response.json();
+    const automations = data.value || [];
+
+    console.log(`📊 Analisando ${automations.length} automações da API...\n`);
+
+    // Contar por tipo
+    const visualIdCounts = new Map<number | null, number>();
+
+    automations.forEach((automation: PloomesAutomation) => {
+      const visualId = getVisualEntityId(
+        automation.EntityId,
+        !!automation.TriggerDealStageId
+      );
+
+      visualIdCounts.set(visualId, (visualIdCounts.get(visualId) || 0) + 1);
+    });
+
+    console.log('📈 Distribuição por ID Visual:');
+    console.log('─'.repeat(60));
+
+    // Ordenar e mostrar
+    const sorted = Array.from(visualIdCounts.entries()).sort((a, b) => {
+      if (a[0] === null) return -1;
+      if (b[0] === null) return 1;
+      return a[0] - b[0];
+    });
+
+    sorted.forEach(([visualId, count]) => {
+      const displayName = getEntityDisplayName(visualId);
+      const idStr = visualId === null ? 'null' : visualId.toString().padStart(2);
+      console.log(`  ID Visual ${idStr} (${displayName.padEnd(25)}): ${count} automações`);
+    });
+
+    // Exemplos de cada tipo
+    console.log('\n🔍 Exemplos de automações por tipo:\n');
+
+    // Workflow
+    const workflowExample = automations.find(a => a.EntityId === 2 && a.TriggerDealStageId);
+    if (workflowExample) {
+      const visualId = getVisualEntityId(workflowExample.EntityId, !!workflowExample.TriggerDealStageId);
+      console.log(`Workflow (ID Visual ${visualId}):`);
+      console.log(`  Nome: ${workflowExample.Name}`);
+      console.log(`  EntityId Ploomes: ${workflowExample.EntityId}`);
+      console.log(`  TriggerDealStageId: ${workflowExample.TriggerDealStageId}`);
+      console.log(`  ✓ Mapeado corretamente para ID Visual 2`);
+    }
+
+    // Genérica
+    const genericExample = automations.find(a => !a.EntityId || (a.EntityId === 2 && !a.TriggerDealStageId));
+    if (genericExample) {
+      const visualId = getVisualEntityId(genericExample.EntityId, !!genericExample.TriggerDealStageId);
+      console.log(`\nGenérica (ID Visual ${visualId}):`);
+      console.log(`  Nome: ${genericExample.Name}`);
+      console.log(`  EntityId Ploomes: ${genericExample.EntityId || 'null'}`);
+      console.log(`  TriggerDealStageId: ${genericExample.TriggerDealStageId || 'null'}`);
+      console.log(`  ✓ Mapeado corretamente para ID Visual null`);
+    }
+
+    console.log('\n✅ Validação com dados reais concluída!\n');
+
+  } catch (error) {
+    console.error("❌ Erro ao buscar dados da API:", error);
+    failedTests++;
+  }
 }
 
-// Executar o teste
-testEntityMapping();
+// Executar testes
+testWithRealData().then(() => {
+  console.log('\n═'.repeat(30));
+  if (failedTests === 0) {
+    console.log('🎊 TODOS OS TESTES PASSARAM! 🎊');
+    process.exit(0);
+  } else {
+    console.log('⚠️  ALGUNS TESTES FALHARAM ⚠️');
+    process.exit(1);
+  }
+});

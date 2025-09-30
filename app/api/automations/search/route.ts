@@ -8,6 +8,7 @@ import type {
   AutomationEntityType,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
+import { getVisualEntityId, getEntityDisplayName } from "@/constants/automation-entities";
 
 // Search-specific types
 export interface SearchResult extends Automation {
@@ -83,15 +84,7 @@ function mapEntityType(entityId: number): AutomationEntityType {
   return entityMap[entityId] || 'unknown';
 }
 
-function getEntityName(entityId: number): string {
-  const entityNames: Record<number, string> = {
-    1: 'Contatos',
-    2: 'Negócios',
-    3: 'Tarefas',
-    4: 'Pedidos'
-  };
-  return entityNames[entityId] || `Entidade ${entityId}`;
-}
+// REMOVIDA: função local getEntityName() - agora usa getEntityDisplayName() do constants
 
 function getTriggerName(triggerId: number): string {
   const triggerNames: Record<number, string> = {
@@ -127,11 +120,17 @@ function transformPloomesAutomation(
     pipelineName = pipelinesMap[ploomesAutomation.TriggerDealPipelineId];
   }
 
+  // Calcular ID visual correto baseado no EntityId do Ploomes + contexto
+  const visualEntityId = getVisualEntityId(
+    ploomesAutomation.EntityId,
+    !!ploomesAutomation.TriggerDealStageId
+  );
+
   return {
     id: ploomesAutomation.Id,
     name: ploomesAutomation.Name,
-    entityId: ploomesAutomation.EntityId,
-    entityName: getEntityName(ploomesAutomation.EntityId),
+    entityId: visualEntityId, // IMPORTANTE: Retorna ID visual, não EntityId do Ploomes
+    entityName: getEntityDisplayName(visualEntityId), // Usa função do constants para mapeamento correto
     triggerId: ploomesAutomation.TriggerId,
     triggerName: getTriggerName(ploomesAutomation.TriggerId),
     triggerType: mapTriggerType(ploomesAutomation.TriggerId),
@@ -172,23 +171,38 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
 
     // Escape single quotes for OData
     const escapedQuery = query.replace(/'/g, "''");
-    const escapedTerms = searchTerms.map(term => term.replace(/'/g, "''"));
 
-    // Build comprehensive search query - search for full query AND individual terms
-    const searchConditions = [
-      // Search for full query in Name
-      `contains(tolower(Name), tolower('${escapedQuery}'))`,
-      // Search for full query in Creator/Name
-      `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
-      // Search for individual terms in Name
-      ...escapedTerms.map(term =>
-        `contains(tolower(Name), tolower('${term}'))`
-      ),
-      // Search for individual terms in Creator/Name
-      ...escapedTerms.map(term =>
-        `contains(tolower(Creator/Name), tolower('${term}'))`
-      )
-    ];
+    // Otimização: Para queries longas (>80 chars) ou muitos termos (>5), buscar apenas pela query completa
+    // Para evitar queries OData muito longas que podem falhar
+    const useFullQueryOnly = query.length > 80 || searchTerms.length > 5;
+
+    let searchConditions: string[];
+
+    if (useFullQueryOnly) {
+      // Busca apenas pela query completa
+      searchConditions = [
+        `contains(tolower(Name), tolower('${escapedQuery}'))`,
+        `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
+      ];
+    } else {
+      // Busca pela query completa E pelos termos individuais
+      const escapedTerms = searchTerms.map(term => term.replace(/'/g, "''"));
+
+      searchConditions = [
+        // Search for full query in Name
+        `contains(tolower(Name), tolower('${escapedQuery}'))`,
+        // Search for full query in Creator/Name
+        `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
+        // Search for individual terms in Name
+        ...escapedTerms.map(term =>
+          `contains(tolower(Name), tolower('${term}'))`
+        ),
+        // Search for individual terms in Creator/Name
+        ...escapedTerms.map(term =>
+          `contains(tolower(Creator/Name), tolower('${term}'))`
+        )
+      ];
+    }
 
     const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$filter=${searchConditions.join(' or ')}&$top=100&$orderby=CreateDate desc`;
 
@@ -278,7 +292,7 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
         const creatorScore = calculateMatchScore(automation.Creator?.Name || '', searchTerms);
         const pipelineScore = calculateMatchScore(transformedAutomation.pipelineName || '', searchTerms);
         const stageScore = calculateMatchScore(transformedAutomation.stageName || '', searchTerms);
-        const entityScore = calculateMatchScore(transformedAutomation.entityName || '', searchTerms);
+        const entityScore = calculateMatchScore(transformedAutomation.entityName || '', searchTerms); // Agora usa nome correto do constants
         const triggerScore = calculateMatchScore(transformedAutomation.triggerName || '', searchTerms);
 
         let actionsScore = 0;
@@ -412,8 +426,9 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
                 results.push({
                   ...transformedAutomation,
                   matchedFields,
-                  matchedContent
-                });
+                  matchedContent,
+                  score: 1 // Score mínimo para resultados de busca adicional
+                } as SearchResult & { score: number });
               });
             }
           } catch (error) {
@@ -423,10 +438,14 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       }
     }
 
-    // Remove duplicates and limit results
-    const uniqueResults = results.filter((result, index, self) =>
-      index === self.findIndex(r => r.id === result.id)
-    ).slice(0, 20);
+    // Remove duplicates, sort by score, and limit results
+    const uniqueResults = results
+      .filter((result, index, self) =>
+        index === self.findIndex(r => r.id === result.id)
+      )
+      .sort((a, b) => ((b as any).score || 0) - ((a as any).score || 0))
+      .slice(0, 20)
+      .map(({ score, ...result }: any) => result as SearchResult); // Remove score property from final results
 
     return NextResponse.json({
       results: uniqueResults,

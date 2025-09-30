@@ -111,7 +111,8 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
     return triggers[triggerType as keyof typeof triggers] || triggerType;
   };
 
-  const getEntityDisplay = (entityId: number) => {
+  const getEntityDisplay = (entityId: number | null) => {
+    if (entityId === null) return "Genérica";
     const entities = {
       1: "Contatos",
       2: "Negócios",
@@ -121,7 +122,8 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
     return entities[entityId as keyof typeof entities] || "Desconhecido";
   };
 
-  const getEntityIcon = (entityId: number) => {
+  const getEntityIcon = (entityId: number | null) => {
+    if (entityId === null) return <Target className='h-4 w-4' />;
     switch (entityId) {
       case 1:
         return <Users className='h-4 w-4' />; // Contatos

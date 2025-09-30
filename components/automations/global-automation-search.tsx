@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, ArrowRight, Bot, Clock, User, Zap, AlertCircle } from "lucide-react";
+import { Search, ArrowRight, Bot, Clock, User, Zap, AlertCircle, History, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,56 @@ function getStatusText(status: string) {
   }
 }
 
+const SEARCH_HISTORY_KEY = 'automation_search_history';
+const MAX_HISTORY_ITEMS = 10;
+
+// Hook para gerenciar histórico de pesquisa
+function useSearchHistory() {
+  const [history, setHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Carregar histórico do localStorage
+    const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (stored) {
+      try {
+        setHistory(JSON.parse(stored));
+      } catch (e) {
+        console.error('Error loading search history:', e);
+      }
+    }
+  }, []);
+
+  const addToHistory = (query: string) => {
+    if (!query.trim() || query.length < 2) return;
+
+    setHistory(prev => {
+      // Remover duplicatas e adicionar no topo
+      const filtered = prev.filter(item => item !== query);
+      const newHistory = [query, ...filtered].slice(0, MAX_HISTORY_ITEMS);
+
+      // Salvar no localStorage
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+
+      return newHistory;
+    });
+  };
+
+  const removeFromHistory = (query: string) => {
+    setHistory(prev => {
+      const newHistory = prev.filter(item => item !== query);
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  };
+
+  return { history, addToHistory, removeFromHistory, clearHistory };
+}
+
 export function GlobalAutomationSearch({
   onAutomationSelect,
   placeholder = "Busque automações em qualquer lugar...",
@@ -65,6 +115,8 @@ export function GlobalAutomationSearch({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const { history, addToHistory, removeFromHistory } = useSearchHistory();
 
   const {
     results,
@@ -112,10 +164,30 @@ export function GlobalAutomationSearch({
   };
 
   const handleAutomationSelect = (automation: SearchResult) => {
+    console.log('[GLOBAL_SEARCH] handleAutomationSelect called', {
+      automationId: automation.id,
+      entityId: automation.entityId,
+      automationName: automation.name,
+      hasCallback: !!onAutomationSelect
+    });
+
+    // Adicionar ao histórico antes de navegar
+    if (query) {
+      addToHistory(query);
+    }
+
     setIsOpen(false);
     setSelectedIndex(-1);
-    clearSearch();
+    // NÃO limpar a busca, apenas fechar o dropdown
+    // clearSearch();
+    
+    console.log('[GLOBAL_SEARCH] Calling onAutomationSelect callback');
     onAutomationSelect?.(automation);
+  };
+
+  const handleHistoryItemClick = (historyQuery: string) => {
+    setQuery(historyQuery);
+    inputRef.current?.focus();
   };
 
   const handleInputFocus = () => {
@@ -241,32 +313,42 @@ export function GlobalAutomationSearch({
                           {highlightMatch(automation.matchedContent, query)}
                         </div>
 
-                        {/* Metadata */}
-                        <div className="flex items-center gap-3 text-xs text-zinc-500">
-                          <span className="flex items-center gap-1">
+                        {/* Metadata with smart highlighting */}
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className={cn(
+                            "flex items-center gap-1 transition-colors",
+                            automation.matchedFields.includes('entidade')
+                              ? "text-rose-600 animate-pulse font-medium"
+                              : "text-zinc-500"
+                          )}>
                             <Bot className="h-3 w-3" />
                             {automation.entityName}
                           </span>
                           {automation.creator && (
-                            <span className="flex items-center gap-1">
+                            <span className={cn(
+                              "flex items-center gap-1 transition-colors",
+                              automation.matchedFields.includes('criador')
+                                ? "text-rose-600 animate-pulse font-medium"
+                                : "text-zinc-500"
+                            )}>
                               <User className="h-3 w-3" />
                               {automation.creator}
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 text-zinc-500">
                             <Clock className="h-3 w-3" />
                             {format(new Date(automation.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                           </span>
                         </div>
 
-                        {/* Matched Fields Tags */}
+                        {/* Matched Fields Tags with pulse animation */}
                         {automation.matchedFields.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {automation.matchedFields.map((field) => (
                               <Badge
                                 key={field}
                                 variant="secondary"
-                                className="text-xs px-1.5 py-0 h-4 bg-rose-50 text-rose-700 border-rose-200"
+                                className="text-xs px-1.5 py-0 h-4 bg-rose-50 text-rose-700 border-rose-200 animate-pulse"
                               >
                                 {field}
                               </Badge>
@@ -284,8 +366,48 @@ export function GlobalAutomationSearch({
             </>
           )}
 
+          {/* Search History */}
+          {!isLoading && query.length === 0 && history.length > 0 && (
+            <>
+              <div className="px-3 py-2 border-b border-zinc-100 bg-zinc-50">
+                <div className="flex items-center justify-between text-xs text-zinc-600">
+                  <span className="flex items-center gap-1">
+                    <History className="h-3 w-3" />
+                    Pesquisas recentes
+                  </span>
+                </div>
+              </div>
+              <div className="py-1">
+                {history.map((historyItem, index) => (
+                  <div
+                    key={index}
+                    className="w-full px-3 py-2 hover:bg-zinc-50 transition-colors group cursor-pointer"
+                    onClick={() => handleHistoryItemClick(historyItem)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Clock className="h-3 w-3 text-zinc-400 shrink-0" />
+                        <span className="text-sm text-zinc-700 truncate">{historyItem}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromHistory(historyItem);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-200 rounded transition-opacity"
+                        aria-label="Remover do histórico"
+                      >
+                        <X className="h-3 w-3 text-zinc-500" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Helper Text */}
-          {!isLoading && query.length === 0 && (
+          {!isLoading && query.length === 0 && history.length === 0 && (
             <div className="p-3 text-center text-sm text-zinc-500">
               <Search className="h-4 w-4 mx-auto mb-1 text-zinc-400" />
               Digite para buscar automações
