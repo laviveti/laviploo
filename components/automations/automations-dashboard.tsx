@@ -220,7 +220,7 @@ export const AutomationsDashboard = () => {
         </div>
 
         {/* Filtros Contextuais */}
-        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} />
+        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} />
 
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>

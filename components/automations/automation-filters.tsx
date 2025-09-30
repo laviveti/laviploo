@@ -15,9 +15,10 @@ import { ptBR } from "date-fns/locale";
 interface AutomationFiltersProps {
   onFiltersChange: (filters: { search?: string; status?: string; createdBy?: string; dateFrom?: string; dateTo?: string }) => void;
   selectedEntityName?: string;
+  filters?: { search?: string; status?: string; createdBy?: string; dateFrom?: string; dateTo?: string };
 }
 
-export const AutomationFilters = ({ onFiltersChange, selectedEntityName }: AutomationFiltersProps) => {
+export const AutomationFilters = ({ onFiltersChange, selectedEntityName, filters }: AutomationFiltersProps) => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [createdBy, setCreatedBy] = useState<string>("");
@@ -44,6 +45,28 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName }: Autom
 
     debouncedOnFiltersChange(filters);
   }, [search, status, createdBy, dateFrom, dateTo, debouncedOnFiltersChange]);
+
+  // Resetar filtros quando props externas estão vazias (dashboard resetou)
+  useEffect(() => {
+    if (filters && Object.keys(filters).length === 0) {
+      console.log('[FILTERS] External filters are empty, clearing internal state');
+      setSearch("");
+      setStatus("all");
+      setCreatedBy("");
+      setDateFrom(undefined);
+      setDateTo(undefined);
+    }
+  }, [filters]);
+
+  // Resetar filtros quando muda de entidade
+  useEffect(() => {
+    console.log('[FILTERS] Entity changed, clearing filters', { selectedEntityName });
+    setSearch("");
+    setStatus("all");
+    setCreatedBy("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  }, [selectedEntityName]);
 
   const clearFilters = () => {
     setSearch("");
