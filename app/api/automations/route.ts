@@ -13,78 +13,68 @@ import type {
   PloomesBehaviorResponse,
   PloomesMailChimpResponse,
   PloomesDealsResponse,
-  PloomesTasksResponse
+  PloomesTasksResponse,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
   "User-Key": process.env.PLOOMES_API_KEY!,
-  "Accept": "application/json",
+  Accept: "application/json",
 };
 
 // Helper functions for data transformation
 function mapTriggerType(triggerId: number): AutomationTriggerType {
   const triggerMap: Record<number, AutomationTriggerType> = {
-    1: 'stage_entry',
-    2: 'stage_exit',
-    5: 'deal_created',
-    6: 'deal_updated',
-    8: 'deal_won',
-    9: 'deal_lost',
-    17: 'recurring'
+    1: "stage_entry",
+    2: "stage_exit",
+    5: "deal_created",
+    6: "deal_updated",
+    8: "deal_won",
+    9: "deal_lost",
+    17: "recurring",
   };
-  return triggerMap[triggerId] || 'unknown';
+  return triggerMap[triggerId] || "unknown";
 }
 
 function mapAutomationStatus(automation: PloomesAutomation): AutomationStatus {
-  if (automation.DisabledDueToError) return 'error';
-  if (!automation.Enabled) return 'inactive';
-  return 'active';
-}
-
-function mapEntityType(entityId: number): AutomationEntityType {
-  const entityMap: Record<number, AutomationEntityType> = {
-    1: 'contacts',
-    2: 'deals',
-    3: 'tasks',
-    4: 'orders'
-  };
-  return entityMap[entityId] || 'unknown';
+  if (automation.DisabledDueToError) return "error";
+  if (!automation.Enabled) return "inactive";
+  return "active";
 }
 
 function getEntityName(entityId: number): string {
   const entityNames: Record<number, string> = {
-    1: 'Contatos',
-    2: 'Negócios',
-    3: 'Tarefas',
-    4: 'Pedidos'
+    1: "Contatos",
+    2: "Negócios", // Vemos na Ploomes como "Workflow"
+    3: "Tarefas",
+    4: "Pedidos",
   };
   return entityNames[entityId] || `Entidade ${entityId}`;
 }
 
 function getTriggerName(triggerId: number): string {
   const triggerNames: Record<number, string> = {
-    1: 'Ao entrar no estágio',
-    2: 'Ao sair do estágio',
-    5: 'Ao criar',
-    6: 'Ao alterar',
-    8: 'Ao ganhar',
-    9: 'Ao perder',
-    17: 'Recorrente'
+    1: "Ao entrar no estágio", // Gatilhos
+    2: "Ao sair do estágio",
+    5: "Ao criar",
+    6: "Ao alterar",
+    8: "Ao ganhar",
+    9: "Ao perder",
+    17: "Recorrente",
   };
   return triggerNames[triggerId] || `Trigger ${triggerId}`;
 }
 
 function transformPloomesAutomation(
   ploomesAutomation: PloomesAutomation,
-  pipelinesMap?: Record<number, string>,
+  pipelinesMap?: Record<number, string>, // Funil
   stagesMap?: Record<number, { name: string; pipelineId: number }>
 ): Automation {
   // Get pipeline and stage information
   let pipelineName: string | undefined;
   let stageName: string | undefined;
-  
+
   if (ploomesAutomation.TriggerDealStageId && stagesMap) {
     const stageInfo = stagesMap[ploomesAutomation.TriggerDealStageId];
     if (stageInfo) {
@@ -111,42 +101,40 @@ function transformPloomesAutomation(
     createdAt: ploomesAutomation.CreateDate,
     lastRun: ploomesAutomation.LastRunTime || undefined,
     creator: ploomesAutomation.Creator?.Name,
-    actions: ploomesAutomation.Actions?.map(action => ({
+    actions: ploomesAutomation.Actions?.map((action) => ({
       id: action.Id,
       name: action.Name,
-      type: action.TypeId?.toString() || 'unknown',
-      parameters: action.Parameters
+      type: action.TypeId?.toString() || "unknown",
+      parameters: action.Parameters,
     })),
-    description: ploomesAutomation.TriggerDealStageId ?
-      `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` :
-      undefined,
+    description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
     // Pipeline/Stage information
     triggerDealStageId: ploomesAutomation.TriggerDealStageId,
     triggerDealPipelineId: ploomesAutomation.TriggerDealPipelineId,
     pipelineName,
-    stageName
+    stageName,
   };
 }
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const skip = parseInt(url.searchParams.get('skip') || '0');
-    const expand = url.searchParams.get('expand') === 'true';
-    const entityFilter = url.searchParams.get('entity');
-    const statusFilter = url.searchParams.get('status');
-    const search = url.searchParams.get('search');
-    const createdBy = url.searchParams.get('createdBy');
-    const dateFrom = url.searchParams.get('dateFrom');
-    const dateTo = url.searchParams.get('dateTo');
-    const genericFilter = url.searchParams.get('generic') === 'true';
+    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const skip = parseInt(url.searchParams.get("skip") || "0");
+    const expand = url.searchParams.get("expand") === "true";
+    const entityFilter = url.searchParams.get("entity");
+    const statusFilter = url.searchParams.get("status");
+    const search = url.searchParams.get("search");
+    const createdBy = url.searchParams.get("createdBy");
+    const dateFrom = url.searchParams.get("dateFrom");
+    const dateTo = url.searchParams.get("dateTo");
+    const genericFilter = url.searchParams.get("generic") === "true";
 
     // Build automations query with OData parameters
     let automationsQuery = `Automations?$top=${limit}&$skip=${skip}&$orderby=CreateDate desc`;
 
     if (expand) {
-      automationsQuery += '&$expand=Entity,Trigger,Actions,Creator';
+      automationsQuery += "&$expand=Entity,Trigger,Actions,Creator";
     }
 
     // Build OData $filter conditions
@@ -182,13 +170,13 @@ export async function GET(request: Request) {
     }
 
     if (filterConditions.length > 0) {
-      automationsQuery += `&$filter=${filterConditions.join(' and ')}`;
+      automationsQuery += `&$filter=${filterConditions.join(" and ")}`;
     }
 
     // Build count query (same filters but with $count=true and $top=0)
     let countQuery = automationsQuery
-      .replace(`$top=${limit}&$skip=${skip}`, '$count=true&$top=0')
-      .replace('&$expand=Entity,Trigger,Actions,Creator', ''); // Remove expand for count query
+      .replace(`$top=${limit}&$skip=${skip}`, "$count=true&$top=0")
+      .replace("&$expand=Entity,Trigger,Actions,Creator", ""); // Remove expand for count query
 
     // Fetch all data in parallel
     const [
@@ -201,7 +189,7 @@ export async function GET(request: Request) {
       dealsResponse,
       tasksResponse,
       pipelinesResponse,
-      stagesResponse
+      stagesResponse,
     ] = await Promise.allSettled([
       // Real automations from Ploomes (paginated)
       fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, {
@@ -248,7 +236,7 @@ export async function GET(request: Request) {
       fetch(`${PLOOMES_API_BASE}/Deals@Stages`, {
         headers,
         cache: "no-cache",
-      })
+      }),
     ]);
 
     const automations: Automation[] = [];
@@ -272,7 +260,7 @@ export async function GET(request: Request) {
       stagesData.value?.forEach((stage: any) => {
         stagesMap[stage.Id] = {
           name: stage.Name,
-          pipelineId: stage.PipelineId
+          pipelineId: stage.PipelineId,
         };
       });
     }
@@ -280,7 +268,7 @@ export async function GET(request: Request) {
     // Process count response
     if (countResponse.status === "fulfilled" && countResponse.value.ok) {
       const countData = await countResponse.value.json();
-      totalAutomationsCount = countData['@odata.count'] || 0;
+      totalAutomationsCount = countData["@odata.count"] || 0;
     }
 
     // Process real automations
@@ -293,14 +281,14 @@ export async function GET(request: Request) {
       // Only apply status filter locally since it's not handled in OData
 
       if (statusFilter) {
-        filteredAutomations = filteredAutomations.filter(a => {
+        filteredAutomations = filteredAutomations.filter((a) => {
           const status = mapAutomationStatus(a);
           return status === statusFilter;
         });
       }
 
       // Transform to UI format
-      filteredAutomations.forEach(automation => {
+      filteredAutomations.forEach((automation) => {
         automations.push(transformPloomesAutomation(automation, pipelinesMap, stagesMap));
       });
     }
@@ -309,16 +297,16 @@ export async function GET(request: Request) {
     if (integrationsResponse.status === "fulfilled" && integrationsResponse.value.ok) {
       const data: PloomesIntegrationResponse = await integrationsResponse.value.json();
 
-      data.value?.forEach(item => {
+      data.value?.forEach((item) => {
         integrations.push({
           id: item.Integration.Id,
           name: item.Integration.Name,
-          status: 'Connected',
-          fields: item.Integration.Fields?.map(field => ({
+          status: "Connected",
+          fields: item.Integration.Fields?.map((field) => ({
             id: field.Id,
             name: field.Name,
-            type: field.Type
-          }))
+            type: field.Type,
+          })),
         });
       });
     }
@@ -327,13 +315,13 @@ export async function GET(request: Request) {
     if (rdStationBehaviorsResponse.status === "fulfilled" && rdStationBehaviorsResponse.value.ok) {
       const data: PloomesBehaviorResponse = await rdStationBehaviorsResponse.value.json();
 
-      data.value?.forEach(behavior => {
+      data.value?.forEach((behavior) => {
         behaviors.push({
           id: behavior.Id,
           name: behavior.Name,
-          description: behavior.DealStageIdRequired ? 'Requer estágio da oportunidade' : 'Configuração padrão',
+          description: behavior.DealStageIdRequired ? "Requer estágio da oportunidade" : "Configuração padrão",
           isActive: true,
-          integrationName: 'RD Station'
+          integrationName: "RD Station",
         });
       });
     }
@@ -341,13 +329,13 @@ export async function GET(request: Request) {
     if (reevBehaviorsResponse.status === "fulfilled" && reevBehaviorsResponse.value.ok) {
       const data: PloomesBehaviorResponse = await reevBehaviorsResponse.value.json();
 
-      data.value?.forEach(behavior => {
+      data.value?.forEach((behavior) => {
         behaviors.push({
           id: behavior.Id,
           name: behavior.Name,
-          description: behavior.DealStageIdRequired ? 'Requer estágio da oportunidade' : 'Configuração padrão',
+          description: behavior.DealStageIdRequired ? "Requer estágio da oportunidade" : "Configuração padrão",
           isActive: true,
-          integrationName: 'Reev'
+          integrationName: "Reev",
         });
       });
     }
@@ -358,20 +346,20 @@ export async function GET(request: Request) {
 
       integrations.push({
         id: 999,
-        name: 'MailChimp',
-        status: (data.value && data.value.length > 0) ? 'Connected' : 'Disconnected'
+        name: "MailChimp",
+        status: data.value && data.value.length > 0 ? "Connected" : "Disconnected",
       });
     }
 
     // Calculate comprehensive stats
     const automationsByEntity = automations.reduce((acc, automation) => {
-      const entityName = automation.entityName || 'Desconhecido';
+      const entityName = automation.entityName || "Desconhecido";
       acc[entityName] = (acc[entityName] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     const automationsByTrigger = automations.reduce((acc, automation) => {
-      const triggerName = automation.triggerName || 'Desconhecido';
+      const triggerName = automation.triggerName || "Desconhecido";
       acc[triggerName] = (acc[triggerName] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -381,28 +369,25 @@ export async function GET(request: Request) {
 
     const stats = {
       totalAutomations: actualTotalCount,
-      activeAutomations: automations.filter(a => a.status === 'active').length,
+      activeAutomations: automations.filter((a) => a.status === "active").length,
       totalIntegrations: integrations.length,
-      activeIntegrations: integrations.filter(i => i.status === 'Connected').length,
+      activeIntegrations: integrations.filter((i) => i.status === "Connected").length,
       totalBehaviors: behaviors.length,
-      activeBehaviors: behaviors.filter(b => b.isActive).length,
+      activeBehaviors: behaviors.filter((b) => b.isActive).length,
       automationsByEntity,
-      automationsByTrigger
+      automationsByTrigger,
     };
 
     const automationsData: AutomationsData = {
       automations,
       integrations,
       behaviors,
-      stats
+      stats,
     };
 
     return NextResponse.json(automationsData);
   } catch (error) {
     console.error("Erro ao buscar automações:", error);
-    return NextResponse.json(
-      { error: getErrorMessage(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

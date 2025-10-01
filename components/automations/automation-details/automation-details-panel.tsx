@@ -153,11 +153,11 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='w-full p-2 sm:max-w-2xl overflow-y-auto'>
+      <SheetContent className='w-full p-4 sm:max-w-2xl overflow-y-auto'>
         {/* Loading state */}
         {isLoading && (
           <>
-            <SheetTitle className="sr-only">Carregando detalhes da automação</SheetTitle>
+            <SheetTitle className='sr-only'>Carregando detalhes da automação</SheetTitle>
             <div className='space-y-6 py-6'>
               <div className='border-b pb-4'>
                 <Skeleton className='h-6 w-3/4 mb-2' />
@@ -179,7 +179,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
         {/* Error state */}
         {error && (
           <>
-            <SheetTitle className="sr-only">Erro ao carregar automação</SheetTitle>
+            <SheetTitle className='sr-only'>Erro ao carregar automação</SheetTitle>
             <div className='flex flex-col items-center justify-center py-12 px-6 text-center'>
               <AlertCircle className='h-8 w-8 text-red-500 mb-3' />
               <h3 className='text-sm font-medium text-zinc-800 mb-2'>Erro ao carregar detalhes</h3>
@@ -195,8 +195,8 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
         {/* Success state */}
         {automation && !isLoading && !error && (
           <>
-            <SheetTitle className='text-lg font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
-            <SheetHeader className='border-b pb-4'>
+            <SheetTitle className='text-lg py-1 font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
+            <SheetHeader className='border-b p-0 pb-4'>
               <div className='flex items-start justify-between'>
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center gap-2 mt-2'>
@@ -288,9 +288,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                         {automation.filterLogic && (
                           <div className='mb-3 p-2 bg-blue-100 border border-blue-300 rounded-md'>
                             <div className='text-xs font-medium text-blue-800 mb-1'>Lógica dos Filtros:</div>
-                            <div className='text-xs text-blue-700'>
-                              {automation.filterLogic.logicDescription}
-                            </div>
+                            <div className='text-xs text-blue-700'>{automation.filterLogic.logicDescription}</div>
 
                             {/* Explanation of AND/OR */}
                             <div className='mt-2 text-xs text-blue-600 space-y-1'>
@@ -308,7 +306,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                               {automation.filterLogic.groupsWithMultipleCriteria.length > 0 && (
                                 <div className='mt-1 p-1 bg-blue-200 rounded text-blue-800'>
                                   <span className='font-medium'>
-                                    Grupos com múltiplos critérios "E": {automation.filterLogic.groupsWithMultipleCriteria.join(', ')}
+                                    Grupos com múltiplos critérios "E": {automation.filterLogic.groupsWithMultipleCriteria.join(", ")}
                                   </span>
                                 </div>
                               )}
@@ -329,31 +327,36 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                             </thead>
                             <tbody>
                               {automation.filterCriteria.map((criteria, index) => {
-                                const isNewGroup = index === 0 || automation.filterCriteria![index - 1].logicalGroup !== criteria.logicalGroup;
-                                const groupIndicator = automation.filterLogic?.hasMultipleGroups && isNewGroup
-                                  ? automation.filterCriteria!.filter(c => c.logicalGroup === criteria.logicalGroup).length > 1
-                                    ? "OU (grupo com E)"
-                                    : "OU"
-                                  : index > 0 && automation.filterCriteria![index - 1].logicalGroup === criteria.logicalGroup
+                                const isNewGroup =
+                                  index === 0 || automation.filterCriteria![index - 1].logicalGroup !== criteria.logicalGroup;
+                                const groupIndicator =
+                                  automation.filterLogic?.hasMultipleGroups && isNewGroup
+                                    ? automation.filterCriteria!.filter((c) => c.logicalGroup === criteria.logicalGroup).length > 1
+                                      ? "OU (grupo com E)"
+                                      : "OU"
+                                    : index > 0 && automation.filterCriteria![index - 1].logicalGroup === criteria.logicalGroup
                                     ? "E"
                                     : "";
 
                                 return (
-                                  <tr key={index} className={`border-t border-blue-200 ${index % 2 === 0 ? 'bg-white' : 'bg-blue-25'}`}>
+                                  <tr key={index} className={`border-t border-blue-200 ${index % 2 === 0 ? "bg-white" : "bg-blue-25"}`}>
                                     <td className='px-3 py-2 border-r border-blue-200'>
                                       <div className='flex flex-col gap-1'>
                                         <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>
                                           Critério {index + 1}
                                         </span>
                                         {criteria.logicalGroup && (
-                                          <div className='text-xs text-blue-600'>
-                                            Grupo {criteria.logicalGroup}
-                                          </div>
+                                          <div className='text-xs text-blue-600'>Grupo {criteria.logicalGroup}</div>
                                         )}
                                         {groupIndicator && (
                                           <div className='text-xs font-medium px-2 py-1 rounded text-center'>
-                                            <span className={`
-                                              ${groupIndicator.includes('OU') ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}
+                                            <span
+                                              className={`
+                                              ${
+                                                groupIndicator.includes("OU")
+                                                  ? "bg-orange-100 text-orange-700"
+                                                  : "bg-green-100 text-green-700"
+                                              }
                                               px-1 py-0.5 rounded
                                             `}>
                                               {groupIndicator}
@@ -362,18 +365,10 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                                         )}
                                       </div>
                                     </td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>
-                                      {criteria.entity}
-                                    </td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>
-                                      {criteria.field}
-                                    </td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-blue-700'>
-                                      {criteria.operation}
-                                    </td>
-                                    <td className='px-3 py-2 font-medium text-green-700'>
-                                      {criteria.value}
-                                    </td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>{criteria.entity}</td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>{criteria.field}</td>
+                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-blue-700'>{criteria.operation}</td>
+                                    <td className='px-3 py-2 font-medium text-green-700'>{criteria.value}</td>
                                   </tr>
                                 );
                               })}
@@ -540,25 +535,25 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                           {automation.updater || automation.creator || "Sistema"} em{" "}
                           {automation.lastUpdateDate
                             ? new Date(automation.lastUpdateDate).toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            }) +
-                            " às " +
-                            new Date(automation.lastUpdateDate).toLocaleTimeString("pt-BR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }) +
+                              " às " +
+                              new Date(automation.lastUpdateDate).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
                             : new Date(automation.createdAt).toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            }) +
-                            " às " +
-                            new Date(automation.createdAt).toLocaleTimeString("pt-BR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }) +
+                              " às " +
+                              new Date(automation.createdAt).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                         </span>
                       </div>
                     )}
