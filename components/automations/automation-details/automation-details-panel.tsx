@@ -6,18 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Calendar,
   CheckCircle2,
-  FileText,
   Settings,
   User,
   XCircle,
   AlertCircle,
   Bot,
   Target,
-  Filter,
   Play,
-  ExternalLink,
   Clock,
   History,
   ChevronRight,
@@ -25,12 +21,12 @@ import {
   Package,
   Activity,
   Users,
-  Loader2,
   RefreshCcw,
 } from "lucide-react";
 import { useState } from "react";
-import { useAutomationDetails, type AutomationWithDetails } from "@/hooks/use-automation-details";
+import { useAutomationDetails } from "@/hooks/use-automation-details";
 import type { Automation } from "@/types/automations";
+import { FilterSection } from "./filter-section";
 
 interface AutomationDetailsPanelProps {
   automationId: number | null;
@@ -39,8 +35,7 @@ interface AutomationDetailsPanelProps {
 }
 
 export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: AutomationDetailsPanelProps) => {
-  const [showFilterCriteria, setShowFilterCriteria] = useState(false);
-  const [showActions, setShowActions] = useState(true);
+  const [showActions, setShowActions] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   const { data: automation, isLoading, error, refetch } = useAutomationDetails(automationId);
@@ -240,154 +235,8 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
                 </CardContent>
               </Card>
 
-              {/* Execution Conditions */}
-              <Card className='border-zinc-200'>
-                <CardHeader className='pb-3'>
-                  <CardTitle className='flex items-center justify-between text-sm font-medium text-zinc-800'>
-                    <div className='flex items-center gap-2'>
-                      <Filter className='h-4 w-4 text-orange-600' />
-                      Condições de Execução
-                    </div>
-                    {automation.filterCriteria && automation.filterCriteria.length > 0 && (
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => setShowFilterCriteria(!showFilterCriteria)}
-                        className='h-6 w-6 p-0 hover:bg-zinc-100 rounded-md'>
-                        {showFilterCriteria ? <ChevronDown className='h-3 w-3' /> : <ChevronRight className='h-3 w-3' />}
-                      </Button>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-3'>
-                  <div className='space-y-3'>
-                    {/* Filter Conditions */}
-                    {automation.filterConditions && automation.filterConditions.length > 0 && (
-                      <div className='space-y-3'>
-                        {automation.filterConditions.map((condition, index) => (
-                          <div key={index} className='p-3 bg-zinc-50 border border-zinc-200 rounded-md'>
-                            <div className='flex items-center gap-2 text-sm font-medium text-zinc-800'>
-                              <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
-                              <span>Filtro {index + 1}</span>
-                            </div>
-                            <div className='text-sm text-zinc-700 mt-1 font-mono bg-white p-2 rounded border'>{condition}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Expanded Filter Criteria */}
-                    {showFilterCriteria && automation.filterCriteria && automation.filterCriteria.length > 0 && (
-                      <div className='mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md'>
-                        <div className='text-sm font-medium text-blue-800 mb-3 flex items-center gap-2'>
-                          <Filter className='h-4 w-4' />
-                          Critérios detalhados dos filtros
-                        </div>
-
-                        {/* Filter Logic Information */}
-                        {automation.filterLogic && (
-                          <div className='mb-3 p-2 bg-blue-100 border border-blue-300 rounded-md'>
-                            <div className='text-xs font-medium text-blue-800 mb-1'>Lógica dos Filtros:</div>
-                            <div className='text-xs text-blue-700'>{automation.filterLogic.logicDescription}</div>
-
-                            {/* Explanation of AND/OR */}
-                            <div className='mt-2 text-xs text-blue-600 space-y-1'>
-                              <div>
-                                <span className='font-medium'>Filtros "E":</span> Todas as condições devem ser verdadeiras
-                              </div>
-                              <div>
-                                <span className='font-medium'>Filtros "OU":</span> Pelo menos uma condição deve ser verdadeira
-                              </div>
-                              {automation.filterLogic.hasMultipleGroups && (
-                                <div className='mt-1 p-1 bg-blue-200 rounded text-blue-800'>
-                                  <span className='font-medium'>Este filtro tem múltiplos grupos conectados por "OU"</span>
-                                </div>
-                              )}
-                              {automation.filterLogic.groupsWithMultipleCriteria.length > 0 && (
-                                <div className='mt-1 p-1 bg-blue-200 rounded text-blue-800'>
-                                  <span className='font-medium'>
-                                    Grupos com múltiplos critérios "E": {automation.filterLogic.groupsWithMultipleCriteria.join(", ")}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className='bg-white border border-blue-200 rounded-md overflow-hidden'>
-                          <table className='w-full text-sm'>
-                            <thead className='bg-blue-100'>
-                              <tr>
-                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Critério</th>
-                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Entidade</th>
-                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Campo</th>
-                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800 border-r border-blue-200'>Operação</th>
-                                <th className='px-3 py-2 text-left text-xs font-medium text-blue-800'>Valor</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {automation.filterCriteria.map((criteria, index) => {
-                                const isNewGroup =
-                                  index === 0 || automation.filterCriteria![index - 1].logicalGroup !== criteria.logicalGroup;
-                                const groupIndicator =
-                                  automation.filterLogic?.hasMultipleGroups && isNewGroup
-                                    ? automation.filterCriteria!.filter((c) => c.logicalGroup === criteria.logicalGroup).length > 1
-                                      ? "OU (grupo com E)"
-                                      : "OU"
-                                    : index > 0 && automation.filterCriteria![index - 1].logicalGroup === criteria.logicalGroup
-                                    ? "E"
-                                    : "";
-
-                                return (
-                                  <tr key={index} className={`border-t border-blue-200 ${index % 2 === 0 ? "bg-white" : "bg-blue-25"}`}>
-                                    <td className='px-3 py-2 border-r border-blue-200'>
-                                      <div className='flex flex-col gap-1'>
-                                        <span className='text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded'>
-                                          Critério {index + 1}
-                                        </span>
-                                        {criteria.logicalGroup && (
-                                          <div className='text-xs text-blue-600'>Grupo {criteria.logicalGroup}</div>
-                                        )}
-                                        {groupIndicator && (
-                                          <div className='text-xs font-medium px-2 py-1 rounded text-center'>
-                                            <span
-                                              className={`
-                                              ${
-                                                groupIndicator.includes("OU")
-                                                  ? "bg-orange-100 text-orange-700"
-                                                  : "bg-green-100 text-green-700"
-                                              }
-                                              px-1 py-0.5 rounded
-                                            `}>
-                                              {groupIndicator}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>{criteria.entity}</td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-zinc-800'>{criteria.field}</td>
-                                    <td className='px-3 py-2 border-r border-blue-200 font-medium text-blue-700'>{criteria.operation}</td>
-                                    <td className='px-3 py-2 font-medium text-green-700'>{criteria.value}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Filter Expression */}
-                    {automation.filterExpression && (
-                      <div className='p-2 bg-zinc-100 border rounded-md'>
-                        <div className='text-xs font-medium text-zinc-600 mb-1'>Expressão do filtro:</div>
-                        <code className='text-xs text-zinc-700 break-all'>{automation.filterExpression}</code>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Filter Conditions - Simplified */}
+              <FilterSection automation={automation} />
 
               {/* Actions */}
               <Card className='border-zinc-200'>
