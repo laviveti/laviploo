@@ -88,6 +88,18 @@ export interface AutomationAction {
   parameters?: Record<string, any>;
 }
 
+// Search-specific types
+export interface SearchResult extends Automation {
+  matchedFields: string[];
+  matchedContent: string;
+}
+
+export interface GlobalSearchResponse {
+  results: SearchResult[];
+  total: number;
+  query: string;
+}
+
 export type AutomationTriggerType =
   | 'stage_entry' // TriggerId 1 - Ao entrar no estágio
   | 'stage_exit' // TriggerId 2 - Ao sair do estágio

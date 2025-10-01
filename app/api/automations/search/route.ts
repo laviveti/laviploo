@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type {
   Automation,
+  SearchResult,
+  GlobalSearchResponse,
   PloomesAutomationsResponse,
   PloomesAutomation,
   AutomationTriggerType,
@@ -8,19 +10,8 @@ import type {
   AutomationEntityType,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
+import { normalizeText } from "@/lib/utils";
 import { getVisualEntityId, getEntityDisplayName } from "@/constants/automation-entities";
-
-// Search-specific types
-export interface SearchResult extends Automation {
-  matchedFields: string[];
-  matchedContent: string;
-}
-
-export interface GlobalSearchResponse {
-  results: SearchResult[];
-  total: number;
-  query: string;
-}
 
 export interface PloomesUserResponse {
   "@odata.context": string;
@@ -168,6 +159,9 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
 
     // Split query into individual terms for multi-term search
     const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+    
+    // Debug log para verificar os termos de busca
+    console.log(`SEARCH DEBUG: Query="${query}", Terms=[${searchTerms.join(', ')}]`);
 
     // Escape single quotes for OData
     const escapedQuery = query.replace(/'/g, "''");
@@ -176,35 +170,8 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
     // Para evitar queries OData muito longas que podem falhar
     const useFullQueryOnly = query.length > 80 || searchTerms.length > 5;
 
-    let searchConditions: string[];
-
-    if (useFullQueryOnly) {
-      // Busca apenas pela query completa
-      searchConditions = [
-        `contains(tolower(Name), tolower('${escapedQuery}'))`,
-        `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
-      ];
-    } else {
-      // Busca pela query completa E pelos termos individuais
-      const escapedTerms = searchTerms.map(term => term.replace(/'/g, "''"));
-
-      searchConditions = [
-        // Search for full query in Name
-        `contains(tolower(Name), tolower('${escapedQuery}'))`,
-        // Search for full query in Creator/Name
-        `contains(tolower(Creator/Name), tolower('${escapedQuery}'))`,
-        // Search for individual terms in Name
-        ...escapedTerms.map(term =>
-          `contains(tolower(Name), tolower('${term}'))`
-        ),
-        // Search for individual terms in Creator/Name
-        ...escapedTerms.map(term =>
-          `contains(tolower(Creator/Name), tolower('${term}'))`
-        )
-      ];
-    }
-
-    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$filter=${searchConditions.join(' or ')}&$top=100&$orderby=CreateDate desc`;
+    // Buscar todas as automações para aplicar filtro insensível a acentos no lado do servidor
+    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$top=100&$orderby=CreateDate desc`;
 
     // Fetch context data in parallel
     const [
@@ -260,15 +227,19 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       });
     }
 
-    // Helper function to calculate match score
+    // Helper function to calculate match score with accent-insensitive matching
     const calculateMatchScore = (text: string, terms: string[]): number => {
-      const lowerText = text.toLowerCase();
+      if (!text) return 0;
+      const normalizedText = normalizeText(text);
       let score = 0;
 
       // Count how many terms are found in the text
       terms.forEach(term => {
-        if (lowerText.includes(term.toLowerCase())) {
+        const normalizedTerm = normalizeText(term);
+        if (normalizedText.includes(normalizedTerm)) {
           score++;
+          // Debug log para verificar matches
+          console.log(`MATCH FOUND: "${normalizedTerm}" in "${normalizedText}" (original: "${text}")`);
         }
       });
 
@@ -279,6 +250,8 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
 
     if (automationsResponse.status === "fulfilled" && automationsResponse.value.ok) {
       const data: PloomesAutomationsResponse = await automationsResponse.value.json();
+      
+      console.log(`SEARCH DEBUG: Processing ${data.value?.length || 0} automations`);
 
       data.value?.forEach(automation => {
         const transformedAutomation = transformPloomesAutomation(

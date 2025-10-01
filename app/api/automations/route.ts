@@ -16,6 +16,7 @@ import type {
   PloomesTasksResponse,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
+import { normalizeText } from "@/lib/utils";
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
@@ -157,9 +158,8 @@ export async function GET(request: Request) {
       filterConditions.push(`(EntityId eq null or (EntityId eq 2 and TriggerDealStageId eq null))`);
     }
 
-    if (search) {
-      filterConditions.push(`contains(tolower(Name), tolower('${search.replace(/'/g, "''")}')}`);
-    }
+    // Não aplicar filtro de busca na query OData para permitir busca insensível a acentos
+    // A busca será aplicada no lado do servidor após receber os dados
 
     if (dateFrom) {
       filterConditions.push(`CreateDate ge ${dateFrom}T00:00:00Z`);
@@ -284,6 +284,17 @@ export async function GET(request: Request) {
         filteredAutomations = filteredAutomations.filter((a) => {
           const status = mapAutomationStatus(a);
           return status === statusFilter;
+        });
+      }
+
+      // Apply search filter with accent-insensitive matching
+      if (search) {
+        const normalizedSearch = normalizeText(search);
+        filteredAutomations = filteredAutomations.filter((a) => {
+          const normalizedName = normalizeText(a.Name || '');
+          const normalizedCreator = normalizeText(a.Creator?.Name || '');
+          return normalizedName.includes(normalizedSearch) || 
+                 normalizedCreator.includes(normalizedSearch);
         });
       }
 

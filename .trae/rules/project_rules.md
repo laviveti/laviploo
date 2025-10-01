@@ -543,3 +543,18 @@ ci(github): configurar workflow de deploy
 - **Apenas sob solicitação**: Executar o projeto somente quando explicitamente solicitado pelo usuário
 - **Confirmação**: Sempre aguardar confirmação antes de iniciar servidores ou processos longos
 - **Respeito ao controle**: O usuário deve ter controle total sobre quando o projeto é executado
+
+### Ferramentas de Automação e Testes
+
+- **PROIBIDO**: Nunca executar ferramentas como Playwright, Puppeteer ou similares automaticamente
+- **Apenas sob solicitação**: Usar ferramentas de automação de navegador somente quando explicitamente solicitado pelo usuário
+- **Sem permissão automática**: Não abrir navegadores, fazer capturas de tela ou interagir com páginas web sem autorização expressa
+- **Controle total**: O usuário deve ter controle completo sobre quando e como ferramentas de automação são utilizadas
+
+### Comandos de Rede e Requisições HTTP
+
+- **PROIBIDO**: Nunca executar comandos como `curl`, `Invoke-WebRequest`, `wget` ou similares automaticamente
+- **Apenas sob solicitação**: Executar comandos de rede somente quando explicitamente solicitado pelo usuário
+- **Sem requisições automáticas**: Não fazer requisições HTTP para APIs externas ou internas sem autorização expressa
+- **Controle de acesso**: O usuário deve ter controle total sobre quando e quais requisições são feitas
+- **Segurança**: Evitar exposição de dados sensíveis através de requisições não autorizadas

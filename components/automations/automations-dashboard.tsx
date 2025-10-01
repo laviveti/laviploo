@@ -9,7 +9,7 @@ import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SearchResult } from "@/app/api/automations/search/route";
+import type { SearchResult } from "@/types/automations";
 
 interface AutomationFilters {
   search?: string;
@@ -76,36 +76,46 @@ export const AutomationsDashboard = () => {
 
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
-    console.log("[DASHBOARD] handleEntitySelect called", { entityId });
+    console.log("[DASHBOARD] handleEntitySelect called", {
+      entityId,
+      currentEntityId: selectedEntityId,
+      isContextChange: entityId !== selectedEntityId,
+    });
 
-    // Clear any active navigation target to ensure proper page reset
-    clearTarget();
+    // Only clear target if there's an actual context change
+    const isContextChange = entityId !== selectedEntityId;
+    if (isContextChange) {
+      console.log("[DASHBOARD] Context change detected, clearing target");
+      clearTarget();
+    }
 
-    // Use setTimeout to ensure clearTarget is processed before state changes
-    setTimeout(() => {
-      setSelectedEntityId(entityId);
-      if (entityId !== null) {
-        // When selecting an entity, clear generic filter
-        setSelectedFilter("all");
-      }
-    }, 10);
+    setSelectedEntityId(entityId);
+    if (entityId !== null) {
+      // When selecting an entity, clear generic filter
+      setSelectedFilter("all");
+    }
   };
 
   // Handle filter selection
   const handleFilterSelect = (filter: "all" | "generic" | null) => {
-    console.log("[DASHBOARD] handleFilterSelect called", { filter });
+    console.log("[DASHBOARD] handleFilterSelect called", {
+      filter,
+      currentFilter: selectedFilter,
+      isContextChange: filter !== selectedFilter,
+    });
 
-    // Clear any active navigation target to ensure proper page reset
-    clearTarget();
+    // Only clear target if there's an actual context change
+    const isContextChange = filter !== selectedFilter;
+    if (isContextChange) {
+      console.log("[DASHBOARD] Filter change detected, clearing target");
+      clearTarget();
+    }
 
-    // Use setTimeout to ensure clearTarget is processed before state changes
-    setTimeout(() => {
-      setSelectedFilter(filter);
-      if (filter === "generic") {
-        // When selecting generic, clear entity selection
-        setSelectedEntityId(null);
-      }
-    }, 10);
+    setSelectedFilter(filter);
+    if (filter === "generic") {
+      // When selecting generic, clear entity selection
+      setSelectedEntityId(null);
+    }
   };
 
   // Handle automation selection from global search
@@ -118,7 +128,19 @@ export const AutomationsDashboard = () => {
       currentSelectedFilter: selectedFilter,
     });
 
-    // Determinar o contexto correto baseado no entityId da automação
+    // Determinar se há mudança de contexto
+    const targetEntityId = automation.entityId;
+    const targetFilter = automation.entityId === null ? "generic" : "all";
+    const isContextChange = targetEntityId !== selectedEntityId || targetFilter !== selectedFilter;
+
+    console.log("[DASHBOARD] Navigation context analysis", {
+      targetEntityId,
+      targetFilter,
+      isContextChange,
+      willClearFilters: true, // Sempre limpar filtros para garantir visibilidade
+    });
+
+    // Atualizar contexto se necessário
     if (automation.entityId === null) {
       // Automação genérica -> ir para aba "Genéricas"
       setSelectedEntityId(null);
@@ -131,19 +153,18 @@ export const AutomationsDashboard = () => {
       console.log("[DASHBOARD] Navigating to entity context", automation.entityId);
     }
 
-    setFilters({}); // Clear all filters to ensure the automation is visible
+    // Sempre limpar filtros para garantir que a automação seja visível
+    setFilters({});
 
-    console.log("[DASHBOARD] State updated, calling setTargetAutomation", {
-      newSelectedEntityId: automation.entityId === null ? null : automation.entityId,
-      newSelectedFilter: automation.entityId === null ? "generic" : "all",
+    // Set target automation in Zustand store WITH clearFilters flag
+    // Isso sinaliza para o AutomationPaginationList que deve usar filtros vazios no findPage
+    setTargetAutomation(automation.id, automation.entityId, false, true); // Não abrir detalhes automaticamente, apenas navegar
+
+    console.log("[DASHBOARD] Navigation setup completed", {
+      targetAutomationId: automation.id,
+      targetEntityId: automation.entityId,
+      clearFilters: true,
     });
-
-    // Use setTimeout to ensure state updates are applied before navigation
-    setTimeout(() => {
-      // Set target automation in Zustand store WITH clearFilters flag
-      // Isso sinaliza para o AutomationPaginationList que deve usar filtros vazios no findPage
-      setTargetAutomation(automation.id, automation.entityId, false, true); // Não abrir detalhes automaticamente, apenas navegar
-    }, 50);
   };
 
   // Fetch entity counts

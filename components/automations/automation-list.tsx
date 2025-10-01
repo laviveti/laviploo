@@ -446,7 +446,8 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
       const timer = setTimeout(() => {
         console.log("[PAGINATION] Clearing highlight after 10 seconds for automation", highlightedAutomationId);
         setHighlightedAutomationId(null);
-        clearTarget();
+        // NÃO chamar clearTarget() aqui - apenas remover o highlight visual
+        // O clearTarget() deve ser chamado apenas quando há mudança real de contexto
       }, 10000); // Remove highlight after exactly 10 seconds
 
       return () => {
@@ -454,7 +455,7 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
         clearTimeout(timer);
       };
     }
-  }, [highlightedAutomationId, clearTarget]);
+  }, [highlightedAutomationId]); // Remover clearTarget da dependência
 
   // Clear highlight when context changes (manual navigation)
   useEffect(() => {
