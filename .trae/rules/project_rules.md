@@ -534,3 +534,12 @@ ci(github): configurar workflow de deploy
 - **pnpm**: Gerenciador de pacotes
 - **Docker**: Banco de dados local
 - **Prisma**: ORM e migrations
+
+## Regras de Execução do Projeto
+
+### Execução Automática
+
+- **PROIBIDO**: Nunca executar comandos como `pnpm dev`, `npm start`, ou similares automaticamente
+- **Apenas sob solicitação**: Executar o projeto somente quando explicitamente solicitado pelo usuário
+- **Confirmação**: Sempre aguardar confirmação antes de iniciar servidores ou processos longos
+- **Respeito ao controle**: O usuário deve ter controle total sobre quando o projeto é executado

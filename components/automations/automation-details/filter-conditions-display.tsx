@@ -165,7 +165,7 @@ export const FilterConditionsDisplay = ({
       {/* Cabeçalho */}
       <div className="flex items-center gap-2">
         <Filter className="h-4 w-4 text-amber-600" />
-        <h3 className="text-base font-semibold text-zinc-800">Condições de Execução</h3>
+        <h3 className="text-base font-semibold text-zinc-800">Filtros</h3>
         {parsedFilter?.isComplex && (
           <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-300 text-xs">
             Filtro Complexo

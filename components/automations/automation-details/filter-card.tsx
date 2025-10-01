@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { InterpretedFilterCriteria } from "@/lib/ploomes-mappings";
 
@@ -19,25 +20,8 @@ export const FilterCard = ({
 }: FilterCardProps) => {
   return (
     <div className="relative">
-      {/* Logical Operator Badge */}
-      {!isFirstInGroup && logicalOperator && (
-        <div className="flex justify-center mb-2">
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "text-xs font-medium px-2 py-1",
-              logicalOperator === "OR" 
-                ? "bg-orange-50 text-orange-700 border-orange-200" 
-                : "bg-green-50 text-green-700 border-green-200"
-            )}
-          >
-            {logicalOperator}
-          </Badge>
-        </div>
-      )}
-      
       {/* Filter Card */}
-      <div className="p-3 bg-white border border-zinc-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      <div className="p-3 bg-white rounded-md">
         <div className="flex items-start justify-between gap-3">
           {/* Main Content */}
           <div className="flex-1 space-y-2">
@@ -66,14 +50,7 @@ export const FilterCard = ({
           </div>
         </div>
         
-        {/* Group Indicator */}
-        {criterion.logicalGroup && (
-          <div className="mt-2 pt-2 border-t border-zinc-100">
-            <span className="text-xs text-zinc-500">
-              Grupo {criterion.logicalGroup}
-            </span>
-          </div>
-        )}
+
       </div>
     </div>
   );

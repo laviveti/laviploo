@@ -148,7 +148,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='w-full p-4 sm:max-w-2xl overflow-y-auto'>
+      <SheetContent className='w-full p-4 sm:max-w-4xl overflow-y-auto'>
         {/* Loading state */}
         {isLoading && (
           <>
