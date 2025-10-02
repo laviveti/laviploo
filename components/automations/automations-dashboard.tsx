@@ -49,26 +49,17 @@ export const AutomationsDashboard = () => {
 
   // Sync URL with state changes
   useEffect(() => {
-    console.log("[DASHBOARD] URL sync useEffect triggered", {
-      selectedFilter,
-      selectedEntityId,
-      currentContext: context,
-    });
-
     if (selectedFilter === "generic") {
       if (context !== "generic") {
-        console.log("[DASHBOARD] Setting context to generic");
         setContextState({ context: "generic" });
       }
     } else if (selectedEntityId === null) {
       if (context !== "all") {
-        console.log("[DASHBOARD] Setting context to all");
         setContextState({ context: "all" });
       }
     } else {
       const expectedContext = `entity-${selectedEntityId}`;
       if (context !== expectedContext) {
-        console.log("[DASHBOARD] Setting context to", expectedContext);
         setContextState({ context: expectedContext });
       }
     }
@@ -76,16 +67,9 @@ export const AutomationsDashboard = () => {
 
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
-    console.log("[DASHBOARD] handleEntitySelect called", {
-      entityId,
-      currentEntityId: selectedEntityId,
-      isContextChange: entityId !== selectedEntityId,
-    });
-
     // Only clear target if there's an actual context change
     const isContextChange = entityId !== selectedEntityId;
     if (isContextChange) {
-      console.log("[DASHBOARD] Context change detected, clearing target");
       clearTarget();
     }
 
@@ -98,16 +82,9 @@ export const AutomationsDashboard = () => {
 
   // Handle filter selection
   const handleFilterSelect = (filter: "all" | "generic" | null) => {
-    console.log("[DASHBOARD] handleFilterSelect called", {
-      filter,
-      currentFilter: selectedFilter,
-      isContextChange: filter !== selectedFilter,
-    });
-
     // Only clear target if there's an actual context change
     const isContextChange = filter !== selectedFilter;
     if (isContextChange) {
-      console.log("[DASHBOARD] Filter change detected, clearing target");
       clearTarget();
     }
 
@@ -120,37 +97,20 @@ export const AutomationsDashboard = () => {
 
   // Handle automation selection from global search
   const handleAutomationSelect = (automation: SearchResult) => {
-    console.log("[DASHBOARD] handleAutomationSelect called", {
-      automationId: automation.id,
-      entityId: automation.entityId,
-      automationName: automation.name,
-      currentSelectedEntityId: selectedEntityId,
-      currentSelectedFilter: selectedFilter,
-    });
-
     // Determinar se há mudança de contexto
     const targetEntityId = automation.entityId;
     const targetFilter = automation.entityId === null ? "generic" : "all";
     const isContextChange = targetEntityId !== selectedEntityId || targetFilter !== selectedFilter;
-
-    console.log("[DASHBOARD] Navigation context analysis", {
-      targetEntityId,
-      targetFilter,
-      isContextChange,
-      willClearFilters: true, // Sempre limpar filtros para garantir visibilidade
-    });
 
     // Atualizar contexto se necessário
     if (automation.entityId === null) {
       // Automação genérica -> ir para aba "Genéricas"
       setSelectedEntityId(null);
       setSelectedFilter("generic");
-      console.log("[DASHBOARD] Navigating to generic context");
     } else {
       // Automação específica -> ir para a entidade correspondente
       setSelectedEntityId(automation.entityId);
       setSelectedFilter("all");
-      console.log("[DASHBOARD] Navigating to entity context", automation.entityId);
     }
 
     // Sempre limpar filtros para garantir que a automação seja visível
@@ -159,12 +119,6 @@ export const AutomationsDashboard = () => {
     // Set target automation in Zustand store WITH clearFilters flag
     // Isso sinaliza para o AutomationPaginationList que deve usar filtros vazios no findPage
     setTargetAutomation(automation.id, automation.entityId, false, true); // Não abrir detalhes automaticamente, apenas navegar
-
-    console.log("[DASHBOARD] Navigation setup completed", {
-      targetAutomationId: automation.id,
-      targetEntityId: automation.entityId,
-      clearFilters: true,
-    });
   };
 
   // Fetch entity counts

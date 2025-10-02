@@ -49,7 +49,6 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName, filters
   // Resetar filtros quando props externas estão vazias (dashboard resetou)
   useEffect(() => {
     if (filters && Object.keys(filters).length === 0) {
-      console.log('[FILTERS] External filters are empty, clearing internal state');
       setSearch("");
       setStatus("all");
       setCreatedBy("");
@@ -60,7 +59,6 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName, filters
 
   // Resetar filtros quando muda de entidade
   useEffect(() => {
-    console.log('[FILTERS] Entity changed, clearing filters', { selectedEntityName });
     setSearch("");
     setStatus("all");
     setCreatedBy("");
@@ -100,7 +98,7 @@ export const AutomationFilters = ({ onFiltersChange, selectedEntityName, filters
           <div className='relative flex-1'>
             <Search className='absolute left-2 top-2 h-3 w-3 text-zinc-400' />
             <Input
-              placeholder={`Buscar dentro de ${selectedEntityName || 'contexto atual'}...`}
+              placeholder={`Buscar dentro de ${selectedEntityName || "contexto atual"}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className='pl-7 h-7 text-xs rounded-sm'

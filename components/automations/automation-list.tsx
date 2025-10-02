@@ -222,8 +222,7 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   const [highlightedAutomationId, setHighlightedAutomationId] = useState<number | null>(null);
 
   // Zustand store for navigation
-  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } =
-    useAutomationNavigationStore();
+  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } = useAutomationNavigationStore();
 
   // Hook to find automation page
   const { findPage } = useFindAutomationPage();
@@ -232,9 +231,12 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   const automationRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const isNavigatingToAutomation = useRef(false);
 
-  const handleOpenDetails = useCallback((automationId: number) => {
-    openDetails(automationId);
-  }, [openDetails]);
+  const handleOpenDetails = useCallback(
+    (automationId: number) => {
+      openDetails(automationId);
+    },
+    [openDetails]
+  );
 
   const handleCloseDetails = useCallback(() => {
     closeDetails();
@@ -267,43 +269,18 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   // Reset page when context changes (entityId or generic filter)
   // IMPORTANTE: Não resetar se skipPageReset estiver ativo (navegação de busca global)
   useEffect(() => {
-    console.log("[PAGINATION] Reset page useEffect triggered", {
-      entityId,
-      generic,
-      skipPageReset,
-      currentPage: page,
-      targetAutomationId,
-      targetEntityId,
-      hasActiveTarget: !!targetAutomationId,
-    });
-
     // Se não há target ativo, sempre permitir reset de página
     // Se há target ativo, respeitar o skipPageReset
     const shouldSkipReset = targetAutomationId && skipPageReset;
 
     if (!shouldSkipReset) {
-      console.log("[PAGINATION] Resetting to page 1", {
-        reason: targetAutomationId ? "no skipPageReset" : "no active target",
-      });
       setPage(1);
-    } else {
-      console.log("[PAGINATION] Skipping page reset (active target with skipPageReset=true)");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId, generic, skipPageReset, targetAutomationId]);
 
   // Handle navigation to specific automation from global search
   useEffect(() => {
-    console.log("[PAGINATION] Navigation useEffect triggered", {
-      targetAutomationId,
-      targetEntityId,
-      shouldClearFilters,
-      currentEntityId: entityId,
-      currentPage: page,
-      hasData: !!data?.automations,
-      currentHighlight: highlightedAutomationId,
-    });
-
     if (!targetAutomationId) return;
 
     // Check if target automation is in current entity context
@@ -320,39 +297,20 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
       matchesContext = targetEntityId === entityId;
     }
 
-    console.log("[PAGINATION] Context check", {
-      generic,
-      targetEntityId,
-      entityId,
-      matchesContext,
-      explanation: generic
-        ? `Generic mode: expecting null, got ${targetEntityId}`
-        : entityId === null
-        ? `All mode: expecting non-null, got ${targetEntityId}`
-        : `Entity mode: expecting ${entityId}, got ${targetEntityId}`,
-    });
-
     if (!matchesContext) {
-      console.log("[PAGINATION] Context does not match, skipping");
       return;
     }
 
     // If we don't have data yet, wait
     if (!data?.automations) {
-      console.log("[PAGINATION] No data yet, waiting...");
       return;
     }
 
     // Find automation in current page
     const automationIndex = data.automations.findIndex((a) => a.id === targetAutomationId);
-    console.log("[PAGINATION] Looking for automation in current page", {
-      automationIndex,
-      totalInPage: data.automations.length,
-    });
 
     if (automationIndex !== -1) {
       // Automation is on current page - highlight and scroll
-      console.log("[PAGINATION] Automation found on current page, highlighting");
       setHighlightedAutomationId(targetAutomationId);
       isNavigatingToAutomation.current = false;
 
@@ -373,7 +331,6 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
       }, 100);
     } else if (!isNavigatingToAutomation.current) {
       // Automation not on current page - find correct page
-      console.log("[PAGINATION] Automation not on current page, finding correct page");
       isNavigatingToAutomation.current = true;
 
       const findPageParams = {
@@ -388,33 +345,23 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
         generic: shouldClearFilters ? undefined : generic,
       };
 
-      console.log("[PAGINATION] Calling findPage with params", findPageParams);
-
       // Se shouldClearFilters é true, usar filtros vazios
       // Caso contrário, usar os filtros ativos das props
       findPage(findPageParams)
         .then((result) => {
-          console.log("[PAGINATION] findPage result", result);
           if (result && result.page !== page) {
             // Navigate to correct page
-            console.log(`[PAGINATION] Navigating from page ${page} to page ${result.page}`);
             setPage(result.page);
           } else if (!result) {
             // Automation not found
-            console.warn("[PAGINATION] Automation not found in current context");
             clearTarget();
             isNavigatingToAutomation.current = false;
-          } else {
-            console.log("[PAGINATION] Already on correct page");
           }
         })
-        .catch((error) => {
-          console.error("[PAGINATION] Error finding automation page:", error);
+        .catch(() => {
           clearTarget();
           isNavigatingToAutomation.current = false;
         });
-    } else {
-      console.log("[PAGINATION] Already navigating, skipping");
     }
   }, [
     targetAutomationId,
@@ -440,17 +387,12 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   // Clear highlighted automation after exactly 10 seconds, independent of user interactions
   useEffect(() => {
     if (highlightedAutomationId) {
-      console.log("[PAGINATION] Starting 10-second highlight timer for automation", highlightedAutomationId);
-
       const timer = setTimeout(() => {
-        console.log("[PAGINATION] Clearing highlight after 10 seconds for automation", highlightedAutomationId);
         setHighlightedAutomationId(null);
-        // NÃO chamar clearTarget() aqui - apenas remover o highlight visual
         // O clearTarget() deve ser chamado apenas quando há mudança real de contexto
       }, 10000); // Remove highlight after exactly 10 seconds
 
       return () => {
-        console.log("[PAGINATION] Highlight timer cleanup for automation", highlightedAutomationId);
         clearTimeout(timer);
       };
     }
@@ -459,7 +401,6 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   // Clear highlight when context changes (manual navigation)
   useEffect(() => {
     if (highlightedAutomationId && !targetAutomationId) {
-      console.log("[PAGINATION] Clearing highlight due to context change (manual navigation)");
       setHighlightedAutomationId(null);
     }
   }, [entityId, generic, highlightedAutomationId, targetAutomationId]);

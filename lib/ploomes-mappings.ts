@@ -152,7 +152,13 @@ export function getTriggerName(triggerId: number): string {
  * Interpreta um valor de filtro para exibição
  */
 export function formatFilterValue(value: any, fieldType?: number): string {
-  if (value === null || value === undefined || value === '') {
+  // Apenas retorna "vazio" se for especificamente null, undefined ou string vazia
+  // NÃO retorna vazio para 0 ou false
+  if (value === null || value === undefined) {
+    return 'vazio';
+  }
+
+  if (value === '') {
     return 'vazio';
   }
 
@@ -168,6 +174,7 @@ export function formatFilterValue(value: any, fieldType?: number): string {
         currency: 'BRL'
       }).format(value);
     }
+    // Retornar o número como string (pode ser um ID!)
     return value.toString();
   }
 
@@ -381,30 +388,94 @@ export function analyzeFilterLogic(criteria: InterpretedFilterCriteria[]): {
 }
 
 /**
- * Converte uma expressão OData em critérios legíveis
+ * Tipo de retorno do parser OData
  */
-export function parseODataFilter(filterExpression: string): string[] {
-  const criteria: string[] = [];
+export interface ParsedODataCriterion {
+  field: string;
+  fieldKey: string;
+  operation: string;
+  value: string;
+  isNumericId: boolean;
+}
 
-  // Regex básico para capturar operações simples
-  const patterns = [
-    // field eq 'value'
-    /(\w+)\s+(eq|ne|gt|ge|lt|le|contains|startswith|endswith)\s+['"']([^'"]*)['"']/gi,
-    // field eq value (sem aspas)
-    /(\w+)\s+(eq|ne|gt|ge|lt|le)\s+(\w+)/gi,
-    // field operation null
-    /(\w+)\s+(eq|ne)\s+null/gi
-  ];
+/**
+ * Converte uma expressão OData em critérios estruturados
+ */
+export function parseODataFilter(filterExpression: string): ParsedODataCriterion[] {
+  const criteria: Array<{
+    field: string;
+    fieldKey: string;
+    operation: string;
+    value: string;
+    isNumericId: boolean;
+  }> = [];
 
-  patterns.forEach(pattern => {
-    let match;
-    while ((match = pattern.exec(filterExpression)) !== null) {
-      const [, field, operation, value] = match;
-      const operationText = getOperationText(operation);
-      const valueText = value === 'null' ? 'vazio' : (value || 'vazio');
-      criteria.push(`${field} → ${operationText} → ${valueText}`);
-    }
-  });
+  // Normalizar: substituir + por espaço e remover parênteses extras
+  let normalized = filterExpression.replace(/\+/g, ' ').replace(/[()]/g, '');
 
-  return criteria.length > 0 ? criteria : [filterExpression];
+  // Regex para capturar operações com números (possíveis IDs)
+  // Suporta tanto "field eq value" quanto "path/field eq value"
+  const numericPattern = /([\w/]+)\s+(eq|ne|gt|ge|lt|le)\s+(\d+)/gi;
+  let match;
+
+  while ((match = numericPattern.exec(normalized)) !== null) {
+    const [, fieldPath, operation, value] = match;
+    const operationText = getOperationText(operation);
+
+    // Extrair o nome do campo (última parte do path)
+    const fieldKey = fieldPath.includes('/') ? fieldPath.split('/').pop()! : fieldPath;
+
+    criteria.push({
+      field: fieldKey,
+      fieldKey: fieldPath,
+      operation: operationText,
+      value: value,
+      isNumericId: true
+    });
+  }
+
+  // Regex para capturar operações com strings
+  const stringPattern = /([\w/]+)\s+(eq|ne|contains|startswith|endswith)\s+['"']([^'"]*)['"']/gi;
+  while ((match = stringPattern.exec(normalized)) !== null) {
+    const [, fieldPath, operation, value] = match;
+    const operationText = getOperationText(operation);
+    const fieldKey = fieldPath.includes('/') ? fieldPath.split('/').pop()! : fieldPath;
+
+    criteria.push({
+      field: fieldKey,
+      fieldKey: fieldPath,
+      operation: operationText,
+      value: value,
+      isNumericId: false
+    });
+  }
+
+  // Regex para null
+  const nullPattern = /([\w/]+)\s+(eq|ne)\s+null/gi;
+  while ((match = nullPattern.exec(normalized)) !== null) {
+    const [, fieldPath, operation] = match;
+    const operationText = getOperationText(operation);
+    const fieldKey = fieldPath.includes('/') ? fieldPath.split('/').pop()! : fieldPath;
+
+    criteria.push({
+      field: fieldKey,
+      fieldKey: fieldPath,
+      operation: operationText,
+      value: 'vazio',
+      isNumericId: false
+    });
+  }
+
+  return criteria;
+}
+
+/**
+ * Converte critérios parsed OData em strings legíveis (versão simples)
+ * @deprecated Use parseODataFilter e resolva os IDs manualmente
+ */
+export function parseODataFilterToStrings(filterExpression: string): string[] {
+  const parsed = parseODataFilter(filterExpression);
+  return parsed.map(criterion =>
+    `${criterion.field} → ${criterion.operation} → ${criterion.value}`
+  );
 }

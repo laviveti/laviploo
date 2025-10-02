@@ -52,8 +52,6 @@ export const UserDropdown = ({ className }: UserDropdownProps) => {
         const cookieValue = encodeURIComponent(JSON.stringify(trustedDeviceData));
         const maxAge = 5 * 60; // 5 minutos em segundos
         document.cookie = `trusted_device=${cookieValue}; max-age=${maxAge}; path=/; secure; samesite=strict`;
-
-        console.log("💾 Trusted device token salvo para silent auth:", trustedToken);
       }
 
       await signOut();
