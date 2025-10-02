@@ -122,7 +122,7 @@ export function useAutomationsPagination(filters: AutomationsFilters = {}) {
     generic: filters.generic,
   });
 
-  const queryResult = useQuery({
+  const queryResult = useQuery<AutomationPaginationData>({
     queryKey: ['automations-pagination', page, validPerPage, filtersKey],
     queryFn: () => fetchAutomationsPage({ page, perPage: validPerPage, filters }),
     // Cache por 2 minutos

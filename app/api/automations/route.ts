@@ -291,10 +291,9 @@ export async function GET(request: Request) {
       if (search) {
         const normalizedSearch = normalizeText(search);
         filteredAutomations = filteredAutomations.filter((a) => {
-          const normalizedName = normalizeText(a.Name || '');
-          const normalizedCreator = normalizeText(a.Creator?.Name || '');
-          return normalizedName.includes(normalizedSearch) || 
-                 normalizedCreator.includes(normalizedSearch);
+          const normalizedName = normalizeText(a.Name || "");
+          const normalizedCreator = normalizeText(a.Creator?.Name || "");
+          return normalizedName.includes(normalizedSearch) || normalizedCreator.includes(normalizedSearch);
         });
       }
 
@@ -363,17 +362,23 @@ export async function GET(request: Request) {
     }
 
     // Calculate comprehensive stats
-    const automationsByEntity = automations.reduce((acc, automation) => {
-      const entityName = automation.entityName || "Desconhecido";
-      acc[entityName] = (acc[entityName] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const automationsByEntity = automations.reduce(
+      (acc, automation) => {
+        const entityName = automation.entityName || "Desconhecido";
+        acc[entityName] = (acc[entityName] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const automationsByTrigger = automations.reduce((acc, automation) => {
-      const triggerName = automation.triggerName || "Desconhecido";
-      acc[triggerName] = (acc[triggerName] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const automationsByTrigger = automations.reduce(
+      (acc, automation) => {
+        const triggerName = automation.triggerName || "Desconhecido";
+        acc[triggerName] = (acc[triggerName] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     // Since we're now using OData filtering, use the count query result directly
     const actualTotalCount = totalAutomationsCount > 0 ? totalAutomationsCount : automations.length;

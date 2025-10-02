@@ -304,7 +304,7 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   }, [highlightedAutomationId]);
 
   // Loading state
-  if (!isLoading) {
+  if (isLoading) {
     return (
       <div className='space-y-2 p-3'>
         {Array.from({ length: 6 }).map((_, i) => (
@@ -367,7 +367,7 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
         {/* Lista de automações */}
         <div className='flex-1 overflow-auto'>
           <div className='space-y-2 p-3'>
-            {automations.map((automation) => (
+            {automations.map((automation: Automation) => (
               <AutomationItem
                 key={automation.id}
                 automation={automation}
