@@ -12,7 +12,8 @@ import {
   Building2,
   ClipboardList,
   MapPin,
-  MessageSquare
+  MessageSquare,
+  Target
 } from "lucide-react";
 
 /**
@@ -24,7 +25,8 @@ import {
  * IDs VISUAIS (usados na UI) vs EntityId do Ploomes:
  * - ID Visual 1 → EntityId Ploomes 1 (Contatos)
  * - ID Visual 2 → EntityId Ploomes 2 COM TriggerDealStageId (Workflow)
- * - ID Visual 4 → EntityId Ploomes 4 (Vendas/Deals)
+ * - ID Visual 3 → EntityId Ploomes 3 (Tarefas)
+ * - ID Visual 4 → EntityId Ploomes 4 (Pedidos)
  * - ID Visual 7 → EntityId Ploomes 7 (Propostas)
  * - ID Visual 10 → EntityId Ploomes 10 (Produtos)
  * - ID Visual 12 → EntityId Ploomes 12 (Tarefas)
@@ -43,15 +45,16 @@ export interface AutomationEntity {
 }
 
 export const AUTOMATION_ENTITIES: AutomationEntity[] = [
-  { id: 1, name: "contacts", displayName: "Cliente", icon: Users },
+  { id: 1, name: "contacts", displayName: "Contatos", icon: Users },
   { id: 2, name: "workflow", displayName: "Workflow", icon: Bot },
-  { id: 4, name: "deals", displayName: "Venda", icon: ShoppingCart },
-  { id: 7, name: "proposals", displayName: "Proposta", icon: ClipboardList },
-  { id: 10, name: "products", displayName: "Produto", icon: Package },
-  { id: 12, name: "tasks", displayName: "Tarefa", icon: Activity },
-  { id: 24, name: "users", displayName: "Usuário", icon: User },
+  { id: 3, name: "tasks", displayName: "Tarefas", icon: Activity },
+  { id: 4, name: "deals", displayName: "Pedidos", icon: Package },
+  { id: 7, name: "proposals", displayName: "Propostas", icon: ClipboardList },
+  { id: 10, name: "products", displayName: "Produtos", icon: Package },
+  { id: 12, name: "tasks", displayName: "Tarefas", icon: Activity },
+  { id: 24, name: "users", displayName: "Usuários", icon: User },
   { id: 36, name: "interactions", displayName: "Registro de Interação", icon: MessageSquare },
-  { id: 66, name: "documents", displayName: "Documento", icon: FileText },
+  { id: 66, name: "documents", displayName: "Documentos", icon: FileText },
 ];
 
 /**
@@ -100,4 +103,26 @@ export function getEntityDisplayName(visualEntityId: number | null): string {
   if (visualEntityId === null) return 'Genérica';
   const entity = AUTOMATION_ENTITIES.find(e => e.id === visualEntityId);
   return entity?.displayName || `Entidade ${visualEntityId}`;
+}
+
+/**
+ * Retorna o ícone da entidade pelo ID visual
+ */
+export function getEntityIcon(visualEntityId: number | null, className = 'h-4 w-4'): React.ReactElement {
+  if (visualEntityId === null) {
+    const Icon = Target;
+    return <Icon className={className} />;
+  }
+
+  const entity = AUTOMATION_ENTITIES.find(e => e.id === visualEntityId);
+  const Icon = entity?.icon || Target;
+  return <Icon className={className} />;
+}
+
+/**
+ * Retorna a entidade completa pelo ID visual
+ */
+export function getEntityById(visualEntityId: number | null): AutomationEntity | null {
+  if (visualEntityId === null) return null;
+  return AUTOMATION_ENTITIES.find(e => e.id === visualEntityId) || null;
 }

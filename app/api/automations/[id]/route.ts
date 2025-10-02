@@ -125,9 +125,9 @@ async function fetchFieldDetails(fieldKeys: string[]): Promise<Map<string, any>>
   if (fieldKeys.length === 0) return fieldDetailsMap;
 
   try {
-    // Criar filtro para buscar todos os campos de uma vez
+    // Criar filtro para buscar todos os campos de uma vez, incluindo as opções
     const fieldFilter = fieldKeys.map((key) => `Key eq '${key}'`).join(" or ");
-    const fieldsResponse = await fetch(`${PLOOMES_API_BASE}/Fields?$filter=${encodeURIComponent(fieldFilter)}&$expand=Type,Entity`, {
+    const fieldsResponse = await fetch(`${PLOOMES_API_BASE}/Fields?$filter=${encodeURIComponent(fieldFilter)}&$expand=Type,Entity,OptionsTable($expand=Options)`, {
       headers,
       cache: "no-cache",
     });
@@ -145,6 +145,18 @@ async function fetchFieldDetails(fieldKeys: string[]): Promise<Map<string, any>>
   }
 
   return fieldDetailsMap;
+}
+
+/**
+ * Busca o valor legível de uma opção de campo customizado
+ */
+function getFieldOptionValue(fieldDetails: any, optionId: number): string | null {
+  if (!fieldDetails?.OptionsTable?.Options || !Array.isArray(fieldDetails.OptionsTable.Options)) {
+    return null;
+  }
+
+  const option = fieldDetails.OptionsTable.Options.find((opt: any) => opt.Id === optionId);
+  return option?.Name || null;
 }
 
 /**
@@ -206,30 +218,31 @@ async function interpretComplexFilter(
 
       const interpretedCriteria = interpretFilterField(filterField, fieldDetails, entityName);
 
-      // Se o valor parece ser um ID numérico e o campo é uma referência, buscar o nome real
+      // Se o valor parece ser um ID numérico, tentar resolver
       if (filterField.Values && Array.isArray(filterField.Values) && filterField.Values.length > 0) {
         const firstValue = filterField.Values[0];
         const intValue = firstValue.IntegerValue;
 
-        // Debug: ver o que está vindo nos Values
-        console.log('[interpretComplexFilter] DEBUG filterField:', {
-          fieldKey,
-          Values: filterField.Values,
-          intValue,
-          interpretedValue: interpretedCriteria.value
-        });
-
         if (intValue && fieldKey) {
-          const realName = await fetchReferenceValue(fieldKey, intValue);
-          if (realName) {
-            console.log('[interpretComplexFilter] Resolved ID:', { fieldKey, intValue, realName });
-            interpretedCriteria.value = realName;
-          } else {
-            console.log('[interpretComplexFilter] Could not resolve ID:', { fieldKey, intValue });
+          // Primeiro tentar resolver como opção de campo customizado
+          let resolved = false;
+
+          if (fieldDetails) {
+            const optionValue = getFieldOptionValue(fieldDetails, intValue);
+            if (optionValue) {
+              interpretedCriteria.value = optionValue;
+              resolved = true;
+            }
+          }
+
+          // Se não achou nas opções, tentar como referência direta
+          if (!resolved) {
+            const realName = await fetchReferenceValue(fieldKey, intValue);
+            if (realName) {
+              interpretedCriteria.value = realName;
+            }
           }
         }
-      } else {
-        console.log('[interpretComplexFilter] No Values found for field:', fieldKey);
       }
 
       criteria.push(interpretedCriteria);

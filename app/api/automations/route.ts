@@ -17,6 +17,8 @@ import type {
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
 import { normalizeText } from "@/lib/utils";
+import { getEntityDisplayName } from "@/constants/automation-entities";
+import { getTriggerName as getPloomestriggerName } from "@/lib/ploomes-mappings";
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
@@ -44,27 +46,13 @@ function mapAutomationStatus(automation: PloomesAutomation): AutomationStatus {
   return "active";
 }
 
-function getEntityName(entityId: number): string {
-  const entityNames: Record<number, string> = {
-    1: "Contatos",
-    2: "Negócios", // Vemos na Ploomes como "Workflow"
-    3: "Tarefas",
-    4: "Pedidos",
-  };
-  return entityNames[entityId] || `Entidade ${entityId}`;
+function getTriggerName(triggerId: number): string {
+  return getPloomestriggerName(triggerId);
 }
 
-function getTriggerName(triggerId: number): string {
-  const triggerNames: Record<number, string> = {
-    1: "Ao entrar no estágio", // Gatilhos
-    2: "Ao sair do estágio",
-    5: "Ao criar",
-    6: "Ao alterar",
-    8: "Ao ganhar",
-    9: "Ao perder",
-    17: "Recorrente",
-  };
-  return triggerNames[triggerId] || `Trigger ${triggerId}`;
+// DEPRECATED: Use getEntityDisplayName from constants/automation-entities
+function getEntityName(entityId: number): string {
+  return getEntityDisplayName(entityId);
 }
 
 function transformPloomesAutomation(

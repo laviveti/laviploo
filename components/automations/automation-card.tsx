@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { Automation, AutomationAction } from "@/types/automations";
 import { Hint } from "../system/hint";
+import { getEntityIcon } from "@/constants/automation-entities";
 
 interface AutomationCardProps {
   automation: Automation;
@@ -68,16 +69,8 @@ export const AutomationCard = ({ automation }: AutomationCardProps) => {
     }
   };
 
-  const getEntityIcon = (entityId: number | null) => {
-    if (entityId === null) return <Zap className='h-4 w-4' />;
-    switch (entityId) {
-      case 1: return <Users className='h-4 w-4' />; // Contatos
-      case 2: return <Bot className='h-4 w-4' />; // Negócios
-      case 3: return <Activity className='h-4 w-4' />; // Tarefas
-      case 4: return <Package className='h-4 w-4' />; // Pedidos
-      default: return <Zap className='h-4 w-4' />;
-    }
-  };
+  // Use centralized entity icon function
+  const EntityIcon = () => getEntityIcon(automation.entityId, 'h-4 w-4');
 
   const getTriggerTypeColor = (triggerType: string) => {
     switch (triggerType) {
@@ -113,7 +106,7 @@ export const AutomationCard = ({ automation }: AutomationCardProps) => {
       <CardHeader className='pb-2 px-3 py-3'>
         <div className='flex items-start justify-between gap-2'>
           <div className='flex items-start gap-2 min-w-0 flex-1'>
-            {getEntityIcon(automation.entityId)}
+            <EntityIcon />
             <div className='min-w-0 flex-1'>
               <CardTitle className='text-sm font-semibold text-zinc-800 group-hover:text-rose-600 transition-colors leading-tight line-clamp-2'>
                 {automation.name}

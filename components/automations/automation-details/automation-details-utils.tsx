@@ -9,6 +9,7 @@ import {
   Package,
 } from "lucide-react";
 import type { Automation } from "@/types/automations";
+import { getEntityDisplayName, getEntityIcon as getCentralizedEntityIcon } from "@/constants/automation-entities";
 
 export const getStatusIcon = (status: Automation["status"]) => {
   switch (status) {
@@ -73,30 +74,11 @@ export const getTriggerTypeDisplay = (triggerType: string) => {
 };
 
 export const getEntityDisplay = (entityId: number | null) => {
-  if (entityId === null) return "Genérica";
-  const entities = {
-    1: "Contatos",
-    2: "Negócios",
-    3: "Tarefas",
-    4: "Pedidos",
-  };
-  return entities[entityId as keyof typeof entities] || "Desconhecido";
+  return getEntityDisplayName(entityId);
 };
 
 export const getEntityIcon = (entityId: number | null) => {
-  if (entityId === null) return <Target className='h-4 w-4' />;
-  switch (entityId) {
-    case 1:
-      return <Users className='h-4 w-4' />; // Contatos
-    case 2:
-      return <Bot className='h-4 w-4' />; // Negócios
-    case 3:
-      return <Activity className='h-4 w-4' />; // Tarefas
-    case 4:
-      return <Package className='h-4 w-4' />; // Pedidos
-    default:
-      return <Target className='h-4 w-4' />;
-  }
+  return getCentralizedEntityIcon(entityId, 'h-4 w-4');
 };
 
 export const getActionTypeDisplay = (typeId: string) => {

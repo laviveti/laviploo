@@ -11,6 +11,7 @@ import { useAutomationNavigationStore } from "@/stores/use-automation-navigation
 import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResult } from "@/types/automations";
+import { getEntityDisplayName } from "@/constants/automation-entities";
 
 interface AutomationFilters {
   search?: string;
@@ -19,19 +20,6 @@ interface AutomationFilters {
   dateFrom?: string;
   dateTo?: string;
 }
-
-const ENTITY_NAMES: Record<number, string> = {
-  1: "Contatos",
-  2: "Negócios",
-  3: "Tarefas",
-  4: "Pedidos",
-  5: "Cotações",
-  6: "Leads",
-  7: "Produtos",
-  8: "Usuários",
-  9: "Workflow",
-  10: "Sistema",
-};
 
 export const AutomationsDashboard = () => {
   // Estado local original (funcionava)
@@ -160,7 +148,7 @@ export const AutomationsDashboard = () => {
     return entityCountsData.totalCount;
   }, [entityCountsData]);
 
-  const selectedEntityName = selectedEntityId ? ENTITY_NAMES[selectedEntityId] : undefined;
+  const selectedEntityName = selectedEntityId ? getEntityDisplayName(selectedEntityId) : undefined;
 
   if (isLoadingCounts) {
     return (

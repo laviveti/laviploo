@@ -3,9 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Filter } from "lucide-react";
-import { Hint } from "@/components/system/hint";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AutomationWithDetails } from "@/hooks/use-automation-details";
+import { translateFilterValue } from "@/lib/ploomes-filter-translator";
 
 interface FilterSectionProps {
   automation: AutomationWithDetails;
@@ -14,7 +13,8 @@ interface FilterSectionProps {
 export const FilterSection = ({ automation }: FilterSectionProps) => {
   // Check if we have filter data
   const hasFilterCriteria = automation.filterCriteria && automation.filterCriteria.length > 0;
-  const hasFilterExpression = automation.filterExpression;
+  // "true" is a special case: it means no actual filter criteria (always true)
+  const hasFilterExpression = automation.filterExpression && automation.filterExpression.toLowerCase().trim() !== 'true';
 
   if (!hasFilterCriteria && !hasFilterExpression) {
     return (
@@ -26,7 +26,7 @@ export const FilterSection = ({ automation }: FilterSectionProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className='text-sm text-zinc-500 italic'>Nenhuma condição de filtro configurada</div>
+          <div className='text-sm text-zinc-500 italic'>Automação sem filtros personalizados</div>
         </CardContent>
       </Card>
     );
@@ -43,8 +43,7 @@ export const FilterSection = ({ automation }: FilterSectionProps) => {
           Filtros
         </CardTitle>
       </CardHeader>
-      <TooltipProvider>
-        <CardContent className='space-y-4'>
+      <CardContent className='space-y-4'>
           {/* Filter Table */}
           {hasFilterCriteria && (
             <div className='space-y-3'>
@@ -78,26 +77,18 @@ export const FilterSection = ({ automation }: FilterSectionProps) => {
                     {automation.filterCriteria?.map((criterion, index) => (
                       <tr key={index} className='hover:bg-zinc-50 transition-colors'>
                         <td className='px-3 py-2 text-zinc-700'>
-                          <Hint content={criterion.entity || "Workflow"} side='top' skipProvider>
-                            <div className='truncate max-w-[120px]'>{criterion.entity || "Workflow"}</div>
-                          </Hint>
+                          <div className='truncate max-w-[120px]'>{criterion.entity || "Workflow"}</div>
                         </td>
                         <td className='px-3 py-2 text-zinc-700 font-medium'>
-                          <Hint content={criterion.field} side='top' skipProvider>
-                            <div className='truncate max-w-[180px]'>{criterion.field}</div>
-                          </Hint>
+                          <div className='truncate max-w-[180px]'>{criterion.field}</div>
                         </td>
                         <td className='px-3 py-2 text-zinc-600'>
-                          <Hint content={criterion.operation} side='top' skipProvider>
-                            <div className='truncate max-w-[120px]'>{criterion.operation}</div>
-                          </Hint>
+                          <div className='truncate max-w-[120px]'>{criterion.operation}</div>
                         </td>
                         <td className='px-3 py-2'>
-                          <Hint content={criterion.value} side='top' skipProvider>
-                            <code className='text-xs bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-700 inline-block max-w-[300px] truncate align-middle'>
-                              {criterion.value}
-                            </code>
-                          </Hint>
+                          <code className='text-xs bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-700 inline-block max-w-[300px] truncate align-middle'>
+                            {translateFilterValue(criterion.value)}
+                          </code>
                         </td>
                         <td className='text-center px-3 py-2'>
                           <Badge variant='outline' className='text-xs text-blue-600 border-blue-200 bg-blue-50'>
@@ -119,8 +110,7 @@ export const FilterSection = ({ automation }: FilterSectionProps) => {
               <code className='text-xs text-zinc-700 break-all block p-2 bg-white rounded border'>{automation.filterExpression}</code>
             </div>
           )}
-        </CardContent>
-      </TooltipProvider>
+      </CardContent>
     </Card>
   );
 };

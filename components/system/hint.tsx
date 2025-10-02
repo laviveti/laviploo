@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon, Triangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,17 +14,14 @@ interface HintProps {
   align?: "start" | "center" | "end";
   triggerClassName?: string;
   open?: boolean;
-  skipProvider?: boolean; // Permite usar sem criar TooltipProvider interno
+  delayDuration?: number;
 }
 
-// 🆕 ÚNICA ADIÇÃO: Função para sincronizar cores automaticamente
 const getTriangleColor = (contentClassName?: string, triangleClassName?: string): string => {
-  // Se triangleClassName foi especificado explicitamente, usar ele
   if (triangleClassName) {
     return triangleClassName;
   }
 
-  // Se não, tentar extrair cor do contentClassName e sincronizar
   if (contentClassName) {
     const colorMap: Record<string, string> = {
       "bg-red-400": "fill-red-400 stroke-red-400",
@@ -44,62 +40,62 @@ const getTriangleColor = (contentClassName?: string, triangleClassName?: string)
     }
   }
 
-  // Padrão rosa (igual ao original)
   return "fill-rose-400 stroke-rose-400";
 };
 
-export const Hint: React.FC<HintProps> = ({ content, children, side, align, triggerClassName, contentClassName, triangleClassName, skipProvider = false, ...props }) => {
-  const tooltipContent = (
-    <Tooltip delayDuration={50} open={props.open}>
-      <TooltipTrigger asChild className={cn(triggerClassName)}>
-        {children}
-      </TooltipTrigger>
-      <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          sideOffset={props.sideOffset}
-          side={side}
-          align={align}
-          className={cn("z-10 bg-transparent border-0 p-0 shadow-none overflow-visible", contentClassName)}>
-          {!React.isValidElement(content) ? (
-            <div
-              className={cn("relative flex items-center", {
-                "ml-1": side === "right",
-                "mr-1": side === "left",
-                "mb-1": side === "top",
-                "mt-1": side === "bottom",
-              })}>
-              <Triangle
-                className={cn(
-                  "absolute size-2",
-                  {
-                    "right-full -mr-0.5 -rotate-90": side === "right",
-                    "left-full -ml-0.5 rotate-90": side === "left",
-                    "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
-                    "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
-                  },
-                  getTriangleColor(contentClassName, triangleClassName)
-                )}
-              />
-              <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
-            </div>
-          ) : (
-            content
-          )}
-        </TooltipPrimitive.Content>
-      </TooltipPrimitive.Portal>
-    </Tooltip>
-  );
-
-  // Se skipProvider = true, assume que já existe um TooltipProvider no contexto
-  if (skipProvider) {
-    return tooltipContent;
-  }
-
-  // Caso contrário, cria seu próprio provider
+export const Hint: React.FC<HintProps> = ({
+  content,
+  children,
+  side = "top",
+  align = "center",
+  triggerClassName,
+  contentClassName,
+  triangleClassName,
+  sideOffset = 5,
+  delayDuration = 50,
+  open
+}) => {
   return (
-    <TooltipProvider>
-      {tooltipContent}
-    </TooltipProvider>
+    <TooltipPrimitive.Provider delayDuration={delayDuration}>
+      <TooltipPrimitive.Root open={open}>
+        <TooltipPrimitive.Trigger asChild className={cn(triggerClassName)}>
+          {children}
+        </TooltipPrimitive.Trigger>
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Content
+            sideOffset={sideOffset}
+            side={side}
+            align={align}
+            className={cn("z-10 bg-transparent border-0 p-0 shadow-none overflow-visible", contentClassName)}>
+            {!React.isValidElement(content) ? (
+              <div
+                className={cn("relative flex items-center", {
+                  "ml-1": side === "right",
+                  "mr-1": side === "left",
+                  "mb-1": side === "top",
+                  "mt-1": side === "bottom",
+                })}>
+                <Triangle
+                  className={cn(
+                    "absolute size-2",
+                    {
+                      "right-full -mr-0.5 -rotate-90": side === "right",
+                      "left-full -ml-0.5 rotate-90": side === "left",
+                      "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
+                      "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
+                    },
+                    getTriangleColor(contentClassName, triangleClassName)
+                  )}
+                />
+                <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
+              </div>
+            ) : (
+              content
+            )}
+          </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+      </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
   );
 };
 
@@ -109,11 +105,13 @@ export const HelpHint: React.FC<HelpHintProps> = ({
   content,
   side = "right",
   align,
-  triggerClassName: className,
+  triggerClassName,
   contentClassName,
   triangleClassName,
   iconClassName,
   sideOffset,
+  delayDuration,
+  open
 }) => {
   return (
     <Hint
@@ -121,9 +119,11 @@ export const HelpHint: React.FC<HelpHintProps> = ({
       side={side}
       align={align}
       sideOffset={sideOffset}
+      delayDuration={delayDuration}
+      open={open}
       contentClassName={cn("w-fit max-w-48 font-semibold", contentClassName)}
       triangleClassName={triangleClassName}
-      triggerClassName={className}>
+      triggerClassName={triggerClassName}>
       <InfoIcon className={cn("mt-1 size-4 cursor-help stroke-2 text-zinc-500 hover:text-rose-400", iconClassName)} />
     </Hint>
   );

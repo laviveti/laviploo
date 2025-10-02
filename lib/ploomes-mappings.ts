@@ -3,6 +3,8 @@
  * Converte IDs e códigos em texto legível em português
  */
 
+import { getEntityDisplayName } from '@/constants/automation-entities';
+
 // Mapeamento de operações de filtro para português
 export const FILTER_OPERATIONS: Record<string, string> = {
   // Operações básicas
@@ -51,30 +53,6 @@ export const OPERATION_IDS: Record<number, string> = {
   12: 'Não é vazio',
   13: 'Está em',
   14: 'Não está em'
-};
-
-// Mapeamento de entidades do Ploomes por ID
-export const ENTITY_MAPPINGS: Record<number, string> = {
-  1: 'Contatos',
-  2: 'Negócios',
-  3: 'Tarefas',
-  4: 'Pedidos',
-  5: 'Produtos',
-  6: 'Empresas',
-  7: 'Oportunidades',
-  8: 'Campanhas',
-  9: 'Usuários',
-  10: 'Times',
-  11: 'Pipelines',
-  12: 'Estágios',
-  13: 'Workflows',
-  14: 'Workflow de Venda',
-  15: 'Automações',
-  16: 'Filtros',
-  17: 'Campos',
-  18: 'Tipos de Campo',
-  19: 'Valores de Campo',
-  20: 'Interações'
 };
 
 // Mapeamento de tipos de campo
@@ -131,7 +109,7 @@ export function getOperationText(operation: string | number): string {
  * Obtém o nome da entidade pelo ID
  */
 export function getEntityName(entityId: number): string {
-  return ENTITY_MAPPINGS[entityId] || `Entidade ${entityId}`;
+  return getEntityDisplayName(entityId);
 }
 
 /**
