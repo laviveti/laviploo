@@ -4,6 +4,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { useAutomationsPagination } from "@/hooks/use-automations-pagination";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
 import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
+import { useAutomationDetailsPanel } from "@/hooks/use-automation-details-panel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -216,13 +217,13 @@ const PaginationControls = ({
 };
 
 export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationPaginationListProps) => {
-  // State for details panel
-  const [selectedAutomationId, setSelectedAutomationId] = useState<number | null>(null);
-  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+  // Details panel state from URL
+  const { selectedAutomationId, isOpen: detailsPanelOpen, openDetails, closeDetails } = useAutomationDetailsPanel();
   const [highlightedAutomationId, setHighlightedAutomationId] = useState<number | null>(null);
 
   // Zustand store for navigation
-  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } = useAutomationNavigationStore();
+  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } =
+    useAutomationNavigationStore();
 
   // Hook to find automation page
   const { findPage } = useFindAutomationPage();
@@ -232,14 +233,12 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   const isNavigatingToAutomation = useRef(false);
 
   const handleOpenDetails = useCallback((automationId: number) => {
-    setSelectedAutomationId(automationId);
-    setDetailsPanelOpen(true);
-  }, []);
+    openDetails(automationId);
+  }, [openDetails]);
 
   const handleCloseDetails = useCallback(() => {
-    setDetailsPanelOpen(false);
-    setSelectedAutomationId(null);
-  }, []);
+    closeDetails();
+  }, [closeDetails]);
 
   const {
     data,
