@@ -55,6 +55,23 @@ export interface PloomesUser {
   Email?: string;
 }
 
+// Execution history type
+export interface AutomationExecution {
+  date: string;
+  status: 'success' | 'error' | 'skipped';
+  message?: string;
+}
+
+// Filter condition type
+export interface FilterCondition {
+  field: string;
+  operator: string;
+  value: string;
+  entity?: string;
+  displayName?: string;
+  fieldId?: string;
+}
+
 // UI-friendly transformed types
 export interface Automation {
   id: number;
@@ -79,6 +96,12 @@ export interface Automation {
   triggerDealPipelineId?: number;
   pipelineName?: string;
   stageName?: string;
+  // Additional fields used in details panel
+  updatedAt?: string;
+  lastExecutedAt?: string;
+  executionCount?: number;
+  executionHistory?: AutomationExecution[];
+  stageId?: number;
 }
 
 export interface AutomationAction {
@@ -86,6 +109,7 @@ export interface AutomationAction {
   name: string;
   type: string;
   parameters?: Record<string, any>;
+  description?: string;
 }
 
 // Search-specific types

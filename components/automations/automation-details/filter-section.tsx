@@ -85,17 +85,6 @@ export const FilterSection = ({ automation }: FilterSectionProps) => {
           {/* Filter Criteria Cards - Always visible first */}
           {hasFilterCriteria && (
             <div className="space-y-3">
-              {/* Logic Summary */}
-              {automation.filterLogic && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-center gap-2 text-sm font-medium text-blue-800 mb-2">
-                    <Info className="h-4 w-4" />
-                    Lógica dos Filtros
-                  </div>
-                  <div className="text-sm text-blue-700">{automation.filterLogic.logicDescription}</div>
-                </div>
-              )}
-
               {/* Filter Criteria Cards */}
               <div className="space-y-4">
                 {groupKeys.map((groupKey, groupIndex) => {

@@ -5,6 +5,8 @@ import type {
   Automation,
   AutomationTriggerType,
   AutomationStatus,
+  FilterCondition,
+  AutomationExecution,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
 import {
@@ -175,11 +177,7 @@ function transformPloomesAutomation(
   };
   stageId?: number;
   stageName?: string;
-  executionHistory?: {
-    date: string;
-    status: "success" | "error" | "skipped";
-    message?: string;
-  }[];
+  executionHistory?: AutomationExecution[];
   dependencies?: {
     id: number;
     name: string;
@@ -187,10 +185,11 @@ function transformPloomesAutomation(
   }[];
 } {
   // Usar a nova interpretação inteligente de filtros
-  let filterConditions: string[] | undefined = undefined;
   let filterName: string | undefined = undefined;
   let filterExpression: string | undefined = undefined;
   let filterCriteria: InterpretedFilterCriteria[] | undefined = undefined;
+  let filterConditions: string[] | undefined = undefined;
+  let filterLogic: { hasMultipleGroups: boolean; groupsWithMultipleCriteria: number[]; logicDescription: string; } | undefined = undefined;
 
   // Verificar se temos detalhes do filtro
   if (ploomesAutomation.TriggerFilterId && filterDetails) {
@@ -198,24 +197,14 @@ function transformPloomesAutomation(
 
     // Usar a nova função de interpretação
     const interpretation = interpretComplexFilter(filterDetails, fieldDetailsMap || new Map());
-    filterConditions = interpretation.filterConditions;
     filterCriteria = interpretation.filterCriteria;
     filterExpression = interpretation.filterExpression;
+    filterConditions = interpretation.filterConditions;
+    filterLogic = interpretation.filterLogic;
 
   } else if (ploomesAutomation.TriggerFilterId) {
     // Se não conseguimos buscar detalhes, mas temos o ID
-    filterConditions = ["Filtro Personalizado"];
     filterName = "Filtro Personalizado";
-  }
-
-  // Adicionar condições de estágio se existir
-  if (ploomesAutomation.TriggerDealStageId) {
-    const stageCondition = `Estágio específico: ${ploomesAutomation.TriggerDealStageId}`;
-    if (filterConditions) {
-      filterConditions.push(stageCondition);
-    } else {
-      filterConditions = [stageCondition];
-    }
   }
 
   return {
@@ -245,11 +234,12 @@ function transformPloomesAutomation(
       undefined,
     // Extended fields
     triggerConditions: `Entidade: ${getEntityName(ploomesAutomation.EntityId)}, Trigger: ${getTriggerName(ploomesAutomation.TriggerId)}`,
-    filterConditions,
     filterName,
     filterId: ploomesAutomation.TriggerFilterId,
+    filterConditions,
     filterExpression,
     filterCriteria,
+    filterLogic,
     stageId: ploomesAutomation.TriggerDealStageId,
     stageName: stageDetails?.Name,
     executionHistory: ploomesAutomation.LastRunTime ? [{

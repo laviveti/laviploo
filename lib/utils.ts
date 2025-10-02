@@ -7,11 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Normaliza texto removendo acentos e convertendo para minúsculas
- * para busca insensível a acentos
+ * para busca insensível a acentos, preservando caracteres especiais como traço
  */
 export function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '') // Remove apenas acentos, preserva outros caracteres
 }

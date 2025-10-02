@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type {
   Automation,
-  SearchResult,
-  GlobalSearchResponse,
   PloomesAutomationsResponse,
   PloomesAutomation,
   AutomationTriggerType,
@@ -12,6 +10,18 @@ import type {
 import { getErrorMessage } from "@/lib/handle-error";
 import { normalizeText } from "@/lib/utils";
 import { getVisualEntityId, getEntityDisplayName } from "@/constants/automation-entities";
+
+// Export types for use in other files
+export type SearchResult = Automation & {
+  matchedFields: string[];
+  matchedContent: string;
+};
+
+export type GlobalSearchResponse = {
+  results: SearchResult[];
+  total: number;
+  query: string;
+};
 
 export interface PloomesUserResponse {
   "@odata.context": string;
@@ -171,7 +181,8 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
     const useFullQueryOnly = query.length > 80 || searchTerms.length > 5;
 
     // Buscar todas as automações para aplicar filtro insensível a acentos no lado do servidor
-    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$top=100&$orderby=CreateDate desc`;
+    // Aumentado limite para 500 para incluir automações mais antigas
+    const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$top=500&$orderby=CreateDate desc`;
 
     // Fetch context data in parallel
     const [
@@ -228,7 +239,7 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
     }
 
     // Helper function to calculate match score with accent-insensitive matching
-    const calculateMatchScore = (text: string, terms: string[]): number => {
+    const calculateMatchScore = (text: string, terms: string[], isTitle: boolean = false): number => {
       if (!text) return 0;
       const normalizedText = normalizeText(text);
       let score = 0;
@@ -237,9 +248,11 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       terms.forEach(term => {
         const normalizedTerm = normalizeText(term);
         if (normalizedText.includes(normalizedTerm)) {
-          score++;
+          // Título tem peso 3x maior para priorizar matches no nome
+          const weight = isTitle ? 3 : 1;
+          score += weight;
           // Debug log para verificar matches
-          console.log(`MATCH FOUND: "${normalizedTerm}" in "${normalizedText}" (original: "${text}")`);
+          console.log(`MATCH FOUND: "${normalizedTerm}" in "${normalizedText}" (original: "${text}") - Weight: ${weight}`);
         }
       });
 
@@ -252,6 +265,11 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       const data: PloomesAutomationsResponse = await automationsResponse.value.json();
       
       console.log(`SEARCH DEBUG: Processing ${data.value?.length || 0} automations`);
+      console.log(`SEARCH DEBUG: First few automation names:`, data.value?.slice(0, 5).map(a => a.Name));
+      
+      // Verificar se a automação específica está na lista
+      const targetAutomation = data.value?.find(a => a.Name?.includes('Operação - Pedidos de venda'));
+      console.log(`SEARCH DEBUG: Target automation found:`, targetAutomation ? targetAutomation.Name : 'NOT FOUND');
 
       data.value?.forEach(automation => {
         const transformedAutomation = transformPloomesAutomation(
@@ -260,8 +278,8 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           stagesMap
         );
 
-        // Calculate match score for each field
-        const nameScore = calculateMatchScore(automation.Name || '', searchTerms);
+        // Calculate match score for each field - título tem prioridade
+        const nameScore = calculateMatchScore(automation.Name || '', searchTerms, true); // Título tem prioridade
         const creatorScore = calculateMatchScore(automation.Creator?.Name || '', searchTerms);
         const pipelineScore = calculateMatchScore(transformedAutomation.pipelineName || '', searchTerms);
         const stageScore = calculateMatchScore(transformedAutomation.stageName || '', searchTerms);

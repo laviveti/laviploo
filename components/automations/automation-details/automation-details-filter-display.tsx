@@ -246,3 +246,6 @@ export const FilterConditionsDisplay = ({
     </div>
   );
 };
+
+// Export with alias for backward compatibility
+export { FilterConditionsDisplay as AutomationDetailsFilterDisplay };

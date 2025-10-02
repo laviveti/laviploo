@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Automation } from "@/types/automations";
+import type { Automation, AutomationExecution, FilterCondition } from "@/types/automations";
 import type { InterpretedFilterCriteria } from "@/lib/ploomes-mappings";
 
 // Extended automation type for details
 export interface AutomationWithDetails extends Automation {
   triggerConditions?: string;
-  filterConditions?: string[];
   filterName?: string;
   filterId?: number;
+  filterConditions?: string[];
   filterExpression?: string;
   filterCriteria?: InterpretedFilterCriteria[];
   filterLogic?: {
@@ -15,15 +15,6 @@ export interface AutomationWithDetails extends Automation {
     groupsWithMultipleCriteria: number[];
     logicDescription: string;
   };
-  stageId?: number;
-  stageName?: string;
-  updater?: string;
-  lastUpdateDate?: string;
-  executionHistory?: {
-    date: string;
-    status: "success" | "error" | "skipped";
-    message?: string;
-  }[];
   dependencies?: {
     id: number;
     name: string;
