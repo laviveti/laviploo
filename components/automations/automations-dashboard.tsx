@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useQueryStates, parseAsString } from "nuqs";
+import { useQueryStates, parseAsString, parseAsInteger } from "nuqs";
 import { AutomationSidebar } from "./automation-sidebar";
 import { AutomationFilters } from "./automation-filters";
 import { AutomationList } from "./automation-list";
 import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
+import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResult } from "@/types/automations";
 
@@ -42,28 +43,33 @@ export const AutomationsDashboard = () => {
   const setTargetAutomation = useAutomationNavigationStore((state) => state.setTargetAutomation);
   const clearTarget = useAutomationNavigationStore((state) => state.clearTarget);
 
-  // Query param para contexto (espelho do estado)
-  const [{ context }, setContextState] = useQueryStates({
+  // Hook to find automation page
+  const { findPage } = useFindAutomationPage();
+
+  // Query params para contexto e paginação
+  const [{ context, page, perPage }, setQueryState] = useQueryStates({
     context: parseAsString.withDefault("all"),
+    page: parseAsInteger.withDefault(1),
+    perPage: parseAsInteger.withDefault(10),
   });
 
   // Sync URL with state changes
   useEffect(() => {
     if (selectedFilter === "generic") {
       if (context !== "generic") {
-        setContextState({ context: "generic" });
+        setQueryState({ context: "generic" });
       }
     } else if (selectedEntityId === null) {
       if (context !== "all") {
-        setContextState({ context: "all" });
+        setQueryState({ context: "all" });
       }
     } else {
       const expectedContext = `entity-${selectedEntityId}`;
       if (context !== expectedContext) {
-        setContextState({ context: expectedContext });
+        setQueryState({ context: expectedContext });
       }
     }
-  }, [selectedEntityId, selectedFilter, context, setContextState]);
+  }, [selectedEntityId, selectedFilter, context, setQueryState]);
 
   // Handle entity selection
   const handleEntitySelect = (entityId: number | null) => {
@@ -71,6 +77,8 @@ export const AutomationsDashboard = () => {
     const isContextChange = entityId !== selectedEntityId;
     if (isContextChange) {
       clearTarget();
+      // Reset página para 1 quando mudar de contexto
+      setQueryState({ page: 1 });
     }
 
     setSelectedEntityId(entityId);
@@ -86,6 +94,8 @@ export const AutomationsDashboard = () => {
     const isContextChange = filter !== selectedFilter;
     if (isContextChange) {
       clearTarget();
+      // Reset página para 1 quando mudar de contexto
+      setQueryState({ page: 1 });
     }
 
     setSelectedFilter(filter);
@@ -96,13 +106,8 @@ export const AutomationsDashboard = () => {
   };
 
   // Handle automation selection from global search
-  const handleAutomationSelect = (automation: SearchResult) => {
-    // Determinar se há mudança de contexto
-    const targetEntityId = automation.entityId;
-    const targetFilter = automation.entityId === null ? "generic" : "all";
-    const isContextChange = targetEntityId !== selectedEntityId || targetFilter !== selectedFilter;
-
-    // Atualizar contexto se necessário
+  const handleAutomationSelect = async (automation: SearchResult) => {
+    // Atualizar contexto primeiro
     if (automation.entityId === null) {
       // Automação genérica -> ir para aba "Genéricas"
       setSelectedEntityId(null);
@@ -116,9 +121,25 @@ export const AutomationsDashboard = () => {
     // Sempre limpar filtros para garantir que a automação seja visível
     setFilters({});
 
-    // Set target automation in Zustand store WITH clearFilters flag
-    // Isso sinaliza para o AutomationPaginationList que deve usar filtros vazios no findPage
-    setTargetAutomation(automation.id, automation.entityId, false, true); // Não abrir detalhes automaticamente, apenas navegar
+    // Buscar em qual página a automação está (com filtros vazios)
+    const result = await findPage({
+      automationId: automation.id,
+      visualEntityId: automation.entityId,
+      perPage,
+      // Usar filtros vazios para garantir que encontramos a automação
+      status: undefined,
+      search: undefined,
+      createdBy: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+      generic: automation.entityId === null ? true : undefined,
+    });
+
+    if (result) {
+      // Navegar para a página correta e setar target para highlight
+      setQueryState({ page: result.page });
+      setTargetAutomation(automation.id, automation.entityId, false, false);
+    }
   };
 
   // Fetch entity counts

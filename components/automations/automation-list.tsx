@@ -3,7 +3,6 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useAutomationsPagination } from "@/hooks/use-automations-pagination";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
-import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
 import { useAutomationDetailsPanel } from "@/hooks/use-automation-details-panel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -222,14 +221,10 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
   const [highlightedAutomationId, setHighlightedAutomationId] = useState<number | null>(null);
 
   // Zustand store for navigation
-  const { targetAutomationId, targetEntityId, shouldOpenDetails, shouldClearFilters, skipPageReset, clearTarget } = useAutomationNavigationStore();
-
-  // Hook to find automation page
-  const { findPage } = useFindAutomationPage();
+  const { targetAutomationId, shouldOpenDetails, clearTarget } = useAutomationNavigationStore();
 
   // Refs for scroll
   const automationRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const isNavigatingToAutomation = useRef(false);
 
   const handleOpenDetails = useCallback(
     (automationId: number) => {
@@ -266,45 +261,9 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
     generic,
   });
 
-  // Reset page when context changes (entityId or generic filter)
-  // IMPORTANTE: Não resetar se skipPageReset estiver ativo (navegação de busca global)
+  // Handle navigation to specific automation when target changes
   useEffect(() => {
-    // Se não há target ativo, sempre permitir reset de página
-    // Se há target ativo, respeitar o skipPageReset
-    const shouldSkipReset = targetAutomationId && skipPageReset;
-
-    if (!shouldSkipReset) {
-      setPage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entityId, generic, skipPageReset, targetAutomationId]);
-
-  // Handle navigation to specific automation from global search
-  useEffect(() => {
-    if (!targetAutomationId) return;
-
-    // Check if target automation is in current entity context
-    let matchesContext = false;
-
-    if (generic) {
-      // Modo genérico: só aceita automações genéricas (targetEntityId === null)
-      matchesContext = targetEntityId === null;
-    } else if (entityId === null) {
-      // Modo "all": aceita qualquer automação não-genérica
-      matchesContext = targetEntityId !== null;
-    } else {
-      // Modo entidade específica: deve corresponder exatamente
-      matchesContext = targetEntityId === entityId;
-    }
-
-    if (!matchesContext) {
-      return;
-    }
-
-    // If we don't have data yet, wait
-    if (!data?.automations) {
-      return;
-    }
+    if (!targetAutomationId || !data?.automations) return;
 
     // Find automation in current page
     const automationIndex = data.automations.findIndex((a) => a.id === targetAutomationId);
@@ -312,7 +271,6 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
     if (automationIndex !== -1) {
       // Automation is on current page - highlight and scroll
       setHighlightedAutomationId(targetAutomationId);
-      isNavigatingToAutomation.current = false;
 
       // Scroll to automation after render
       setTimeout(() => {
@@ -326,91 +284,31 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
           handleOpenDetails(targetAutomationId);
         }
 
-        // Clear highlight after 10 seconds (handled by separate useEffect)
-        // Don't clear here to avoid conflicts
+        // Clear target after highlight
+        clearTarget();
       }, 100);
-    } else if (!isNavigatingToAutomation.current) {
-      // Automation not on current page - find correct page
-      isNavigatingToAutomation.current = true;
-
-      const findPageParams = {
-        automationId: targetAutomationId,
-        visualEntityId: targetEntityId,
-        perPage,
-        status: shouldClearFilters ? undefined : status,
-        search: shouldClearFilters ? undefined : search,
-        createdBy: shouldClearFilters ? undefined : createdBy,
-        dateFrom: shouldClearFilters ? undefined : dateFrom,
-        dateTo: shouldClearFilters ? undefined : dateTo,
-        generic: shouldClearFilters ? undefined : generic,
-      };
-
-      // Se shouldClearFilters é true, usar filtros vazios
-      // Caso contrário, usar os filtros ativos das props
-      findPage(findPageParams)
-        .then((result) => {
-          if (result && result.page !== page) {
-            // Navigate to correct page
-            setPage(result.page);
-          } else if (!result) {
-            // Automation not found
-            clearTarget();
-            isNavigatingToAutomation.current = false;
-          }
-        })
-        .catch(() => {
-          clearTarget();
-          isNavigatingToAutomation.current = false;
-        });
     }
-  }, [
-    targetAutomationId,
-    targetEntityId,
-    shouldClearFilters, // Adicionar dependência para reagir a mudanças
-    data,
-    entityId,
-    generic,
-    shouldOpenDetails,
-    handleOpenDetails,
-    clearTarget,
-    findPage,
-    perPage,
-    page,
-    setPage,
-    status,
-    search,
-    createdBy,
-    dateFrom,
-    dateTo,
-  ]);
+  }, [targetAutomationId, data, shouldOpenDetails, handleOpenDetails, clearTarget]);
 
-  // Clear highlighted automation after exactly 10 seconds, independent of user interactions
+  // Clear highlighted automation after exactly 10 seconds
   useEffect(() => {
     if (highlightedAutomationId) {
       const timer = setTimeout(() => {
         setHighlightedAutomationId(null);
-        // O clearTarget() deve ser chamado apenas quando há mudança real de contexto
-      }, 10000); // Remove highlight after exactly 10 seconds
+      }, 10000);
 
       return () => {
         clearTimeout(timer);
       };
     }
-  }, [highlightedAutomationId]); // Remover clearTarget da dependência
-
-  // Clear highlight when context changes (manual navigation)
-  useEffect(() => {
-    if (highlightedAutomationId && !targetAutomationId) {
-      setHighlightedAutomationId(null);
-    }
-  }, [entityId, generic, highlightedAutomationId, targetAutomationId]);
+  }, [highlightedAutomationId]);
 
   // Loading state
-  if (isLoading) {
+  if (!isLoading) {
     return (
       <div className='space-y-2 p-3'>
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className='rounded-sm h-20'>
+          <Card key={i} className='rounded-sm p-0 h-20'>
             <CardContent className='p-3'>
               <div className='flex items-start gap-3'>
                 <Skeleton className='h-3 w-3 mt-0.5' />

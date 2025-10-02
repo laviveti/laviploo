@@ -15,6 +15,7 @@ interface HintProps {
   align?: "start" | "center" | "end";
   triggerClassName?: string;
   open?: boolean;
+  skipProvider?: boolean; // Permite usar sem criar TooltipProvider interno
 }
 
 // 🆕 ÚNICA ADIÇÃO: Função para sincronizar cores automaticamente
@@ -47,47 +48,57 @@ const getTriangleColor = (contentClassName?: string, triangleClassName?: string)
   return "fill-rose-400 stroke-rose-400";
 };
 
-export const Hint: React.FC<HintProps> = ({ content, children, side, align, triggerClassName, contentClassName, triangleClassName, ...props }) => {
+export const Hint: React.FC<HintProps> = ({ content, children, side, align, triggerClassName, contentClassName, triangleClassName, skipProvider = false, ...props }) => {
+  const tooltipContent = (
+    <Tooltip delayDuration={50} open={props.open}>
+      <TooltipTrigger asChild className={cn(triggerClassName)}>
+        {children}
+      </TooltipTrigger>
+      <TooltipPrimitive.Portal>
+        <TooltipPrimitive.Content
+          sideOffset={props.sideOffset}
+          side={side}
+          align={align}
+          className={cn("z-10 bg-transparent border-0 p-0 shadow-none overflow-visible", contentClassName)}>
+          {!React.isValidElement(content) ? (
+            <div
+              className={cn("relative flex items-center", {
+                "ml-1": side === "right",
+                "mr-1": side === "left",
+                "mb-1": side === "top",
+                "mt-1": side === "bottom",
+              })}>
+              <Triangle
+                className={cn(
+                  "absolute size-2",
+                  {
+                    "right-full -mr-0.5 -rotate-90": side === "right",
+                    "left-full -ml-0.5 rotate-90": side === "left",
+                    "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
+                    "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
+                  },
+                  getTriangleColor(contentClassName, triangleClassName)
+                )}
+              />
+              <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
+            </div>
+          ) : (
+            content
+          )}
+        </TooltipPrimitive.Content>
+      </TooltipPrimitive.Portal>
+    </Tooltip>
+  );
+
+  // Se skipProvider = true, assume que já existe um TooltipProvider no contexto
+  if (skipProvider) {
+    return tooltipContent;
+  }
+
+  // Caso contrário, cria seu próprio provider
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={50} open={props.open}>
-        <TooltipTrigger asChild className={cn(triggerClassName)}>
-          {children}
-        </TooltipTrigger>
-        <TooltipPrimitive.Portal>
-          <TooltipPrimitive.Content
-            sideOffset={props.sideOffset}
-            side={side}
-            align={align}
-            className={cn("z-10 bg-transparent border-0 p-0 shadow-none overflow-visible", contentClassName)}>
-            {!React.isValidElement(content) ? (
-              <div
-                className={cn("relative flex items-center", {
-                  "ml-1": side === "right",
-                  "mr-1": side === "left",
-                  "mb-1": side === "top",
-                  "mt-1": side === "bottom",
-                })}>
-                <Triangle
-                  className={cn(
-                    "absolute size-2",
-                    {
-                      "right-full -mr-0.5 -rotate-90": side === "right",
-                      "left-full -ml-0.5 rotate-90": side === "left",
-                      "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
-                      "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
-                    },
-                    getTriangleColor(contentClassName, triangleClassName)
-                  )}
-                />
-                <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
-              </div>
-            ) : (
-              content
-            )}
-          </TooltipPrimitive.Content>
-        </TooltipPrimitive.Portal>
-      </Tooltip>
+      {tooltipContent}
     </TooltipProvider>
   );
 };

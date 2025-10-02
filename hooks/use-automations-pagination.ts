@@ -110,8 +110,20 @@ export function useAutomationsPagination(filters: AutomationsFilters = {}) {
   // Valida e ajusta perPage se necessário
   const validPerPage = PER_PAGE_OPTIONS.includes(perPage as any) ? perPage : 10;
 
+  // Criar uma queryKey estável serializando o objeto filters
+  // Isso previne invalidação de cache desnecessária quando o objeto é recriado
+  const filtersKey = JSON.stringify({
+    entityId: filters.entityId,
+    status: filters.status,
+    search: filters.search,
+    createdBy: filters.createdBy,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    generic: filters.generic,
+  });
+
   const queryResult = useQuery({
-    queryKey: ['automations-pagination', page, validPerPage, filters],
+    queryKey: ['automations-pagination', page, validPerPage, filtersKey],
     queryFn: () => fetchAutomationsPage({ page, perPage: validPerPage, filters }),
     // Cache por 2 minutos
     staleTime: 2 * 60 * 1000,
