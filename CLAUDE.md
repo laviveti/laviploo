@@ -93,5 +93,11 @@ pnpm typecheck     # Verificar TypeScript
 ### Preferências de Design/UI
 - **Estilo compacto**: Preferência por elementos com espaçamento e arredondamento menores para design mais sucinto
 - **Padding/Spacing**: Usar tamanhos reduzidos (px-2, py-2, gap-2) ao invés de padrões maiores (px-3, py-3, gap-3)
-- **Border Radius**: Preferir `rounded-md` ao invés de `rounded-lg` para cantos menos arredondados
+- **Border Radius**: Preferir `rounded-sm` para arredondamento mínimo (cantos sutis)
 - **Ícones**: Usar tamanhos menores (h-4 w-4) para manter consistência com o estilo compacto
+
+#### Componente Card
+- **IMPORTANTE**: NÃO definir classe `rounded-[size]` ao usar o componente `Card`
+- O arredondamento padrão (`rounded-sm`) já está configurado em `components/ui/card.tsx`
+- Apenas sobrescrever `rounded-[size]` em último caso, quando absolutamente necessário
+- Respeitar as configurações de padding já definidas no componente base

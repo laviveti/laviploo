@@ -160,8 +160,8 @@ export const IntegrationsDashboard = () => {
       <IntegrationStats stats={stats} />
 
       {/* Filters */}
-      <Card className='rounded-md gap-2'>
-        <CardHeader className=''>
+      <Card>
+        <CardHeader>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
               <Filter className='h-4 w-4 text-zinc-600' />
@@ -196,7 +196,7 @@ export const IntegrationsDashboard = () => {
                   variant={statusFilter === status ? "default" : "outline"}
                   size='sm'
                   onClick={() => setStatusFilter(status)}
-                  className='whitespace-nowrap h-9 px-3 rounded-md text-xs'>
+                  className='whitespace-nowrap h-9 px-3 rounded-sm text-xs'>
                   {status === "All" ? "Todos" : status === "Connected" ? "Conectados" : status === "Disconnected" ? "Desconectados" : "Com Erro"}
                   {status !== "All" && (
                     <Badge variant='secondary' className='ml-2 h-4 w-4 p-0 text-xs rounded-md'>
@@ -232,7 +232,7 @@ export const IntegrationsDashboard = () => {
             {/* Show "Ver mais" button if there are more than 6 integrations */}
             {filteredIntegrations.length > 6 && (
               <div className='flex justify-center mt-4'>
-                <Button onClick={() => setShowAll(!showAll)} variant='outline' className='gap-2 h-9 px-3 rounded-md'>
+                <Button onClick={() => setShowAll(!showAll)} variant='outline' className='gap-2 h-9 px-3 rounded-sm'>
                   {showAll ? "Ver menos" : "Ver mais"}
                   <svg
                     className={`h-3 w-3 transition-transform ${showAll ? "rotate-180" : ""}`}
@@ -247,7 +247,7 @@ export const IntegrationsDashboard = () => {
             )}
           </>
         ) : (
-          <Card className='rounded-md'>
+          <Card className='rounded-sm'>
             <CardContent className='px-3 py-4'>
               <div className='text-center text-zinc-500 text-sm'>
                 {searchTerm || statusFilter !== "All" ? "Nenhuma integração encontrada com os filtros aplicados" : "Nenhuma integração encontrada"}

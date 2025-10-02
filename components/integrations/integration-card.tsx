@@ -73,7 +73,7 @@ export const IntegrationCard = ({ integration }: IntegrationCardProps) => {
   };
 
   return (
-    <Card className='hover:shadow-md transition-all duration-200 border-zinc-200 group rounded-md'>
+    <Card className='hover:shadow-md transition-all duration-200 border-zinc-200 group rounded-sm'>
       <CardHeader className='pb-2 px-3 py-3'>
         <div className='flex items-start justify-between gap-2'>
           <CardTitle className='text-base font-semibold text-zinc-800 group-hover:text-rose-600 transition-colors leading-tight line-clamp-2'>
