@@ -99,7 +99,7 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: Aut
             <MapPin className='h-3 w-3 text-rose-500 mt-0.5 shrink-0' />
             <div className='min-w-0 flex-1'>
               <h3 className='text-sm font-medium text-zinc-800 mb-1 line-clamp-2'>{automation.name}</h3>
-              {automation.description && <p className='text-xs text-zinc-500 line-clamp-1 mb-2'>{automation.description}</p>}
+              {automation.stageName && <p className='text-xs text-zinc-500 line-clamp-1 mb-2'>Estágio: {automation.stageName}</p>}
               <div className='flex flex-wrap items-center gap-1 text-xs text-zinc-500'>
                 <Badge variant='outline' className='text-xs px-1 py-0 rounded-sm'>
                   {automation.triggerName}

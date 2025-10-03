@@ -95,12 +95,13 @@ function transformPloomesAutomation(
       name: action.Name,
       type: action.TypeId?.toString() || "unknown",
     })),
-    description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
     // Pipeline/Stage information
     triggerDealStageId: ploomesAutomation.TriggerDealStageId,
     triggerDealPipelineId: ploomesAutomation.TriggerDealPipelineId,
     pipelineName,
     stageName,
+    // Alias stageId para compatibilidade com o componente de detalhes
+    stageId: ploomesAutomation.TriggerDealStageId,
   };
 }
 

@@ -514,7 +514,8 @@ async function interpretActionParameters(
 async function transformPloomesAutomation(
   ploomesAutomation: PloomesAutomation,
   filterDetails?: any,
-  stageDetails?: any,
+  stageName?: string,
+  pipelineName?: string,
   fieldDetailsMap?: Map<string, any>
 ): Promise<
   Automation & {
@@ -586,7 +587,6 @@ async function transformPloomesAutomation(
         parameters: await interpretActionParameters(action, fieldDetailsMap || new Map()),
       }))
     ) : undefined,
-    description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
     // Extended fields
     triggerConditions: `Entidade: ${getEntityName(ploomesAutomation.EntityId)}, Trigger: ${getTriggerName(ploomesAutomation.TriggerId)}`,
     filterName,
@@ -596,7 +596,9 @@ async function transformPloomesAutomation(
     filterCriteria,
     filterLogic,
     stageId: ploomesAutomation.TriggerDealStageId,
-    stageName: stageDetails?.Name,
+    stageName,
+    triggerDealPipelineId: ploomesAutomation.TriggerDealPipelineId,
+    pipelineName,
     executionHistory: ploomesAutomation.LastRunTime
       ? [
           {
@@ -705,27 +707,77 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       fieldDetailsMap = await fetchFieldDetails(allFieldKeys);
     }
 
-    // Buscar detalhes do estágio se existir
+    // Buscar apenas os dados de stage/pipeline necessários de forma otimizada
+    let stageName: string | undefined;
+    let pipelineName: string | undefined;
+
     if (ploomesAutomation.TriggerDealStageId) {
+      // Buscar o stage específico
       try {
-        const stageResponse = await fetch(`${PLOOMES_API_BASE}/DealStages?$filter=Id eq ${ploomesAutomation.TriggerDealStageId}`, {
-          headers,
-          cache: "no-cache",
-        });
+        const stageResponse = await fetch(
+          `${PLOOMES_API_BASE}/Deals@Stages?$filter=Id eq ${ploomesAutomation.TriggerDealStageId}`,
+          {
+            headers,
+            cache: "no-cache",
+          }
+        );
 
         if (stageResponse.ok) {
           const stageData = await stageResponse.json();
           if (stageData.value && stageData.value.length > 0) {
-            stageDetails = stageData.value[0];
+            const stage = stageData.value[0];
+            stageName = stage.Name;
+
+            // Buscar o pipeline associado ao stage
+            if (stage.PipelineId) {
+              try {
+                const pipelineResponse = await fetch(
+                  `${PLOOMES_API_BASE}/Deals@Pipelines?$filter=Id eq ${stage.PipelineId}`,
+                  {
+                    headers,
+                    cache: "no-cache",
+                  }
+                );
+
+                if (pipelineResponse.ok) {
+                  const pipelineData = await pipelineResponse.json();
+                  if (pipelineData.value && pipelineData.value.length > 0) {
+                    pipelineName = pipelineData.value[0].Name;
+                  }
+                }
+              } catch (pipelineError) {
+                console.warn(`Erro ao buscar pipeline ${stage.PipelineId}:`, pipelineError);
+              }
+            }
           }
         }
       } catch (stageError) {
-        console.warn(`Erro ao buscar estágio ${ploomesAutomation.TriggerDealStageId}:`, stageError);
+        console.warn(`Erro ao buscar stage ${ploomesAutomation.TriggerDealStageId}:`, stageError);
+      }
+    } else if (ploomesAutomation.TriggerDealPipelineId) {
+      // Buscar apenas o pipeline específico
+      try {
+        const pipelineResponse = await fetch(
+          `${PLOOMES_API_BASE}/Deals@Pipelines?$filter=Id eq ${ploomesAutomation.TriggerDealPipelineId}`,
+          {
+            headers,
+            cache: "no-cache",
+          }
+        );
+
+        if (pipelineResponse.ok) {
+          const pipelineData = await pipelineResponse.json();
+          if (pipelineData.value && pipelineData.value.length > 0) {
+            pipelineName = pipelineData.value[0].Name;
+          }
+        }
+      } catch (pipelineError) {
+        console.warn(`Erro ao buscar pipeline ${ploomesAutomation.TriggerDealPipelineId}:`, pipelineError);
       }
     }
 
-    // Transformar automação incluindo detalhes do filtro, estágio e campos
-    const transformedAutomation = await transformPloomesAutomation(ploomesAutomation, filterDetails, stageDetails, fieldDetailsMap);
+    // Transformar automação incluindo detalhes do filtro, stage/pipeline names e campos
+    const transformedAutomation = await transformPloomesAutomation(ploomesAutomation, filterDetails, stageName, pipelineName, fieldDetailsMap);
 
     return NextResponse.json(transformedAutomation);
   } catch (error) {

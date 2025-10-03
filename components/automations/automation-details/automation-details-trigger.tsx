@@ -23,6 +23,11 @@ export const AutomationDetailsTrigger = ({ automation }: AutomationDetailsTrigge
           <div className='text-xs text-zinc-600'>
             <span className='font-medium'>Entidade:</span> {getEntityDisplay(automation.entityId)}
           </div>
+          {automation.pipelineName && (
+            <div className='text-xs text-zinc-600'>
+              <span className='font-medium'>Funil:</span> {automation.pipelineName}
+            </div>
+          )}
           {automation.stageId && (
             <div className='text-xs text-zinc-600'>
               <span className='font-medium'>Estágio específico:</span> {automation.stageName || automation.stageId}
