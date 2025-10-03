@@ -352,11 +352,15 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
       <div className='p-6 text-center'>
         <Bot className='h-8 w-8 text-zinc-400 mx-auto mb-2' />
         <h3 className='text-sm font-medium text-zinc-800 mb-2'>Nenhuma automação encontrada</h3>
-        <p className='text-xs text-zinc-600'>
+        <p className='text-xs text-zinc-600 mb-4'>
           {search || status !== "all" || entityId || createdBy || dateFrom || dateTo || generic
             ? "Tente ajustar os filtros para encontrar automações"
             : "Não há automações configuradas"}
         </p>
+        <Button variant='outline' size='sm' onClick={() => refetch()} className='h-8 px-3 text-xs rounded-sm'>
+          <RefreshCcw className='h-3 w-3 mr-1' />
+          Recarregar
+        </Button>
       </div>
     );
   }
