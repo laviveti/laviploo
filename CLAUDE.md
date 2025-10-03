@@ -41,7 +41,7 @@ validations/ (Zod)
 ## Padrões da API
 - **IMPORTANTE**: Fazer APENAS requisições GET para a API do Ploomes
 - **Sem cache**: Usar `cache: "no-cache"`
-- **Headers**: Incluir `User-Key: process.env.PLOOOMES_API_KEY`
+- **Headers**: Incluir `User-Key: process.env.PLOOMES_API_KEY`
 - **Validação**: Sempre validar com schemas Zod
 - **Tratamento de Erro**: Usar utilitário `getErrorMessage` de `lib/handle-error.ts`
 
@@ -50,7 +50,7 @@ validations/ (Zod)
 - Endpoints da API em `app/api/` seguindo o padrão fornecido
 
 ## Variáveis de Ambiente
-- `PLOOOMES_API_KEY` - Chave de autenticação da API Ploomes
+- `PLOOMES_API_KEY` - Chave de autenticação da API Ploomes
 
 ## Comandos de Desenvolvimento
 ```bash

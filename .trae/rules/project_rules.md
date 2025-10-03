@@ -236,7 +236,7 @@ export function AutomationCard({ automation }: AutomationCardProps) {
 - **Headers obrigatórios**:
   ```typescript
   headers: {
-    'User-Key': process.env.PLOOOMES_API_KEY,
+    'User-Key': process.env.PLOOMES_API_KEY,
     'Content-Type': 'application/json'
   }
   ```
@@ -270,7 +270,7 @@ export async function GET(req: NextRequest) {
       cache: "no-cache",
       headers: {
         "Content-Type": "application/json",
-        "User-Key": process.env.PLOOOMES_API_KEY!,
+        "User-Key": process.env.PLOOMES_API_KEY!,
       },
     });
 
@@ -401,7 +401,7 @@ export function useAutomations() {
 ### Obrigatórias
 
 ```env
-PLOOOMES_API_KEY=sua_chave_aqui
+PLOOMES_API_KEY=sua_chave_aqui
 ```
 
 ### Desenvolvimento (Docker)

@@ -197,7 +197,7 @@ O objetivo é construir uma plataforma para visualizar de forma agradável e fac
           cache: "no-cache", // Garante que os dados são sempre frescos
           headers: {
             "Content-Type": "application/json",
-            "User-Key": process.env.PLOOOMES_API_KEY!, // Chave da API nos headers
+            "User-Key": process.env.PLOOMES_API_KEY!, // Chave da API nos headers
           },
         });
 

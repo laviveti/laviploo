@@ -70,14 +70,14 @@ pnpm shadcn:add       # Adicionar novos componentes shadcn/ui
 
 ## Variáveis de Ambiente
 - `DATABASE_URL` - String de conexão PostgreSQL
-- `PLOOOMES_API_KEY` - Chave de autenticação da API Ploomes
+- `PLOOMES_API_KEY` - Chave de autenticação da API Ploomes
 - `BETTER_AUTH_SECRET` - Chave secreta de autenticação
 - `BETTER_AUTH_URL` - URL da aplicação para callbacks de auth
 
 ## Padrões de Integração de API
 - **CRÍTICO**: Apenas requisições GET para API Ploomes
 - **Sem Cache**: Sempre usar `cache: "no-cache"` para dados frescos
-- **Autenticação**: Incluir header `User-Key: process.env.PLOOOMES_API_KEY`
+- **Autenticação**: Incluir header `User-Key: process.env.PLOOMES_API_KEY`
 - **Validação**: Sempre validar inputs com schemas Zod
 - **Tratamento de Erro**: Usar utilitário `getErrorMessage` de `lib/handle-error.ts`
 - **Consumo Cliente**: Usar hooks TanStack Query para busca de dados client-side

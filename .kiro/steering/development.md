@@ -10,7 +10,7 @@
 ### Restrições da API Ploomes
 - **CRÍTICO**: Apenas requisições GET permitidas para a API Ploomes
 - **Sem Cache**: Sempre usar `cache: "no-cache"` para dados frescos
-- **Autenticação**: Incluir header `User-Key: process.env.PLOOOMES_API_KEY`
+- **Autenticação**: Incluir header `User-Key: process.env.PLOOMES_API_KEY`
 - **Validação**: Sempre validar inputs com schemas Zod antes das chamadas de API
 - **Tratamento de Erro**: Usar utilitário `getErrorMessage` de `lib/handle-error.ts`
 
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       cache: "no-cache",
       headers: {
         "Content-Type": "application/json",
-        "User-Key": process.env.PLOOOMES_API_KEY!,
+        "User-Key": process.env.PLOOMES_API_KEY!,
       },
     });
 
