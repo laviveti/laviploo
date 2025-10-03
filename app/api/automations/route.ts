@@ -118,8 +118,14 @@ export async function GET(request: Request) {
     const dateTo = url.searchParams.get("dateTo");
     const genericFilter = url.searchParams.get("generic") === "true";
 
+    // Quando há filtros que precisam ser aplicados localmente (search, status),
+    // precisamos buscar todas as automações e fazer a paginação no servidor
+    const hasLocalFilters = Boolean(search || statusFilter);
+
     // Build automations query with OData parameters
-    let automationsQuery = `Automations?$top=${limit}&$skip=${skip}&$orderby=CreateDate desc`;
+    let automationsQuery = hasLocalFilters
+      ? `Automations?$orderby=CreateDate desc`
+      : `Automations?$top=${limit}&$skip=${skip}&$orderby=CreateDate desc`;
 
     if (expand) {
       automationsQuery += "&$expand=Entity,Trigger,Actions,Creator";
@@ -161,9 +167,16 @@ export async function GET(request: Request) {
     }
 
     // Build count query (same filters but with $count=true and $top=0)
+    // Não é necessário quando temos filtros locais, pois buscaremos todas as automações
     let countQuery = automationsQuery
-      .replace(`$top=${limit}&$skip=${skip}`, "$count=true&$top=0")
+      .replace(/\$top=\d+&\$skip=\d+&?/, "")
       .replace("&$expand=Entity,Trigger,Actions,Creator", ""); // Remove expand for count query
+
+    if (!countQuery.includes("$count=true")) {
+      countQuery = countQuery.includes("?")
+        ? countQuery.replace("?", "?$count=true&$top=0&")
+        : `${countQuery}?$count=true&$top=0`;
+    }
 
     // Fetch all data in parallel
     const [
@@ -265,7 +278,7 @@ export async function GET(request: Request) {
       let filteredAutomations = data.value || [];
 
       // Entity and generic filters are now handled at OData level for better pagination
-      // Only apply status filter locally since it's not handled in OData
+      // Apply status and search filters locally
 
       if (statusFilter) {
         filteredAutomations = filteredAutomations.filter((a) => {
@@ -282,6 +295,17 @@ export async function GET(request: Request) {
           const normalizedCreator = normalizeText(a.Creator?.Name || "");
           return normalizedName.includes(normalizedSearch) || normalizedCreator.includes(normalizedSearch);
         });
+      }
+
+      // Se temos filtros locais, precisamos fazer a paginação no servidor
+      if (hasLocalFilters) {
+        // Atualizar o total count com o número real de automações filtradas
+        totalAutomationsCount = filteredAutomations.length;
+
+        // Aplicar paginação no servidor
+        const startIndex = skip;
+        const endIndex = skip + limit;
+        filteredAutomations = filteredAutomations.slice(startIndex, endIndex);
       }
 
       // Transform to UI format
