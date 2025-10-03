@@ -316,6 +316,201 @@ async function interpretComplexFilter(
   };
 }
 
+/**
+ * Interpreta parâmetros de uma Action
+ * Na API Ploomes, os parâmetros podem vir:
+ * 1. Como propriedades diretas (FieldKey, StringValue, IntegerValue, etc)
+ * 2. Dentro de RequestBody (JSON string) para ações como Criar Tarefa, Criar Negócio, etc
+ */
+async function interpretActionParameters(
+  action: any,
+  fieldDetailsMap: Map<string, any>
+): Promise<any[]> {
+  const interpretedParams = [];
+
+  // Se tem RequestBody, parsear os parâmetros de lá
+  if (action.RequestBody) {
+    try {
+      const requestBody = JSON.parse(action.RequestBody);
+
+      // Extrair campos relevantes baseado no tipo de ação
+      // ActionId 5 = Criar tarefa
+      if (action.ActionId === 5) {
+        if (requestBody.Users && Array.isArray(requestBody.Users) && requestBody.Users.length > 0) {
+          interpretedParams.push({
+            id: `${action.Id}-users`,
+            actionId: action.ActionId,
+            fieldKey: 'users',
+            fieldName: 'Usuários',
+            value: requestBody.Users.map((u: any) => u.Name).join(', '),
+            valueType: 'reference',
+            fillType: 'Valor estático',
+          });
+        }
+
+        if (requestBody.Type) {
+          interpretedParams.push({
+            id: `${action.Id}-type`,
+            actionId: action.ActionId,
+            fieldKey: 'type',
+            fieldName: 'Tipo',
+            value: requestBody.Type.Name || requestBody.Type.display,
+            valueType: 'reference',
+            fillType: 'Valor estático',
+          });
+        }
+
+        if (requestBody.Title) {
+          interpretedParams.push({
+            id: `${action.Id}-title`,
+            actionId: action.ActionId,
+            fieldKey: 'title',
+            fieldName: 'Título',
+            value: requestBody.Title,
+            valueType: 'string',
+            fillType: 'Valor estático',
+          });
+        }
+
+        if (requestBody.Description) {
+          interpretedParams.push({
+            id: `${action.Id}-description`,
+            actionId: action.ActionId,
+            fieldKey: 'description',
+            fieldName: 'Descrição',
+            value: requestBody.Description,
+            valueType: 'string',
+            fillType: 'Valor estático',
+          });
+        }
+
+        if (requestBody.DateTime) {
+          interpretedParams.push({
+            id: `${action.Id}-datetime`,
+            actionId: action.ActionId,
+            fieldKey: 'datetime',
+            fieldName: 'Data',
+            value: requestBody.DateTime,
+            valueType: 'datetime',
+            fillType: 'Valor estático',
+          });
+        }
+      }
+
+      // Adicionar suporte para outros tipos de ações aqui (ActionId 8 = Criar negócio, etc)
+
+      return interpretedParams;
+    } catch (error) {
+      console.warn(`Erro ao parsear RequestBody da action ${action.Id}:`, error);
+    }
+  }
+
+  // Se não tem RequestBody, usar propriedades diretas (ActionId 1 = Editar dados, etc)
+  let fieldName = action.FieldKey || "Campo";
+  let value = "";
+  let valueType: 'string' | 'integer' | 'decimal' | 'boolean' | 'datetime' | 'reference' = 'string';
+  let fillType = "Valor estático";
+
+  // Buscar detalhes do campo se disponível
+  const fieldDetails = action.FieldKey ? fieldDetailsMap.get(action.FieldKey) : null;
+  if (fieldDetails?.Name) {
+    fieldName = fieldDetails.Name;
+  }
+
+  // Se tem ObjectValueName, usar ele diretamente (é o nome já resolvido)
+  if (action.ObjectValueName) {
+    value = action.ObjectValueName;
+    valueType = 'reference';
+    fillType = "Valor estático";
+  }
+  // Determinar valor e tipo dos campos de valor
+  else if (action.StringValue !== undefined && action.StringValue !== null) {
+    value = action.StringValue;
+    valueType = 'string';
+  } else if (action.BigStringValue !== undefined && action.BigStringValue !== null) {
+    value = action.BigStringValue;
+    valueType = 'string';
+  } else if (action.IntegerValue !== undefined && action.IntegerValue !== null) {
+    value = String(action.IntegerValue);
+    valueType = 'integer';
+  } else if (action.DecimalValue !== undefined && action.DecimalValue !== null) {
+    value = String(action.DecimalValue);
+    valueType = 'decimal';
+  } else if (action.BoolValue !== undefined && action.BoolValue !== null) {
+    value = action.BoolValue ? "Sim" : "Não";
+    valueType = 'boolean';
+  } else if (action.DateTimeValue !== undefined && action.DateTimeValue !== null) {
+    value = action.DateTimeValue;
+    valueType = 'datetime';
+  }
+  // Se tem FieldPathId mas não tem valor, está puxando de outro campo
+  else if (action.FieldPathId) {
+    value = `[Campo de origem]`;
+    valueType = 'reference';
+    fillType = "Puxar valor de um campo";
+  }
+  // Se não tem nenhum valor mas tem FieldKey, significa que está limpando o campo
+  else if (action.FieldKey && action.ShouldClearFieldValues !== false) {
+    value = "(Limpar valor)";
+    valueType = 'string';
+    fillType = "Limpar campo";
+  }
+
+  // Resolver referências específicas
+  if (action.DealStageId) {
+    const stageName = await fetchReferenceValue('stageid', action.DealStageId);
+    value = stageName || `Estágio ${action.DealStageId}`;
+    valueType = 'reference';
+    fillType = "Referência (Estágio)";
+    fieldName = "Estágio do negócio";
+  } else if (action.UserId) {
+    const userName = await fetchReferenceValue('userid', action.UserId);
+    value = userName || `Usuário ${action.UserId}`;
+    valueType = 'reference';
+    fillType = "Referência (Usuário)";
+    fieldName = "Usuário";
+  } else if (action.EmailTemplateId) {
+    value = `Template ${action.EmailTemplateId}`;
+    valueType = 'reference';
+    fillType = "Referência (Template de Email)";
+    fieldName = "Template de email";
+  } else if (action.TaskTypeId) {
+    value = `Tipo de Tarefa ${action.TaskTypeId}`;
+    valueType = 'reference';
+    fillType = "Referência (Tipo de Tarefa)";
+    fieldName = "Tipo de tarefa";
+  } else if (action.InteractionRecordTypeId) {
+    value = `Tipo de Interação ${action.InteractionRecordTypeId}`;
+    valueType = 'reference';
+    fillType = "Referência (Tipo de Interação)";
+    fieldName = "Tipo de interação";
+  }
+
+  // Se é um campo customizado com valor inteiro, tentar resolver como opção
+  if (valueType === 'integer' && action.FieldKey && fieldDetails) {
+    const optionValue = getFieldOptionValue(fieldDetails, parseInt(value));
+    if (optionValue) {
+      value = optionValue;
+      fillType = "Opção de campo";
+    }
+  }
+
+  // Se tem algum valor, adicionar aos parâmetros
+  if (value) {
+    interpretedParams.push({
+      id: action.Id,
+      actionId: action.ActionId,
+      fieldKey: action.FieldKey,
+      fieldName,
+      value,
+      valueType,
+      fillType,
+    });
+  }
+
+  return interpretedParams;
+}
+
 async function transformPloomesAutomation(
   ploomesAutomation: PloomesAutomation,
   filterDetails?: any,
@@ -383,12 +578,14 @@ async function transformPloomesAutomation(
     creator: ploomesAutomation.Creator?.Name,
     updater: ploomesAutomation.Updater?.Name,
     lastUpdateDate: ploomesAutomation.LastUpdateDate || undefined,
-    actions: ploomesAutomation.Actions?.map((action) => ({
-      id: action.Id,
-      name: action.Name,
-      type: action.TypeId?.toString() || "unknown",
-      parameters: action.Parameters,
-    })),
+    actions: ploomesAutomation.Actions ? await Promise.all(
+      ploomesAutomation.Actions.map(async (action) => ({
+        id: action.Id,
+        name: action.Name,
+        type: action.ActionId?.toString() || "unknown",
+        parameters: await interpretActionParameters(action, fieldDetailsMap || new Map()),
+      }))
+    ) : undefined,
     description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
     // Extended fields
     triggerConditions: `Entidade: ${getEntityName(ploomesAutomation.EntityId)}, Trigger: ${getTriggerName(ploomesAutomation.TriggerId)}`,
@@ -458,6 +655,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     let stageDetails = null;
     let fieldDetailsMap: Map<string, any> = new Map();
 
+    // Coletar todos os fieldKeys usados (filtros + actions)
+    const allFieldKeys: string[] = [];
+
     if (ploomesAutomation.TriggerFilterId) {
       try {
         // Primeiro tentar buscar o filtro específico com campos expandidos
@@ -474,26 +674,35 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           if (filterData.value && filterData.value.length > 0) {
             filterDetails = filterData.value[0];
 
-            // Extrair chaves de campos para buscar detalhes
-            const fieldKeys: string[] = [];
+            // Extrair chaves de campos do filtro
             if (filterDetails.Fields && Array.isArray(filterDetails.Fields)) {
               filterDetails.Fields.forEach((field: any) => {
                 const fieldKey = field.FieldKey || field.Key;
-                if (fieldKey && !fieldKeys.includes(fieldKey)) {
-                  fieldKeys.push(fieldKey);
+                if (fieldKey && !allFieldKeys.includes(fieldKey)) {
+                  allFieldKeys.push(fieldKey);
                 }
               });
-            }
-
-            // Buscar detalhes dos campos relacionados
-            if (fieldKeys.length > 0) {
-              fieldDetailsMap = await fetchFieldDetails(fieldKeys);
             }
           }
         }
       } catch (filterError) {
         console.warn(`Erro ao buscar filtro ${ploomesAutomation.TriggerFilterId}:`, filterError);
       }
+    }
+
+    // Extrair chaves de campos das Actions
+    // Os parâmetros vêm diretamente no objeto Action, não em um array separado
+    if (ploomesAutomation.Actions && Array.isArray(ploomesAutomation.Actions)) {
+      ploomesAutomation.Actions.forEach((action: any) => {
+        if (action.FieldKey && !allFieldKeys.includes(action.FieldKey)) {
+          allFieldKeys.push(action.FieldKey);
+        }
+      });
+    }
+
+    // Buscar detalhes de todos os campos usados (filtros + actions)
+    if (allFieldKeys.length > 0) {
+      fieldDetailsMap = await fetchFieldDetails(allFieldKeys);
     }
 
     // Buscar detalhes do estágio se existir

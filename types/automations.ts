@@ -46,7 +46,27 @@ export interface PloomesAutomationAction {
   ActionId: number;
   Name: string;
   TypeId?: number;
-  Parameters?: any;
+  // Os parâmetros vêm como propriedades diretas do objeto, não em array separado
+  FieldKey?: string;
+  FieldPathId?: number;
+  StringValue?: string;
+  BigStringValue?: string;
+  IntegerValue?: number;
+  DecimalValue?: number;
+  BoolValue?: boolean;
+  DateTimeValue?: string;
+  ObjectValueName?: string; // Nome já resolvido de referências
+  // Referências específicas
+  DealStageId?: number;
+  EmailTemplateId?: number;
+  UserId?: number;
+  UserValueId?: number;
+  TaskTypeId?: number;
+  InteractionRecordTypeId?: number;
+  // Para ações complexas (Criar tarefa, Criar negócio, etc)
+  RequestBody?: string;
+  // Flags
+  ShouldClearFieldValues?: boolean;
 }
 
 export interface PloomesUser {
@@ -104,11 +124,22 @@ export interface Automation {
   stageId?: number;
 }
 
+export interface AutomationActionParameter {
+  id: number;
+  actionId: number;
+  fieldKey?: string;
+  fieldName?: string;
+  value: string;
+  valueType: 'string' | 'integer' | 'decimal' | 'boolean' | 'datetime' | 'reference';
+  // Campos adicionais para exibição
+  fillType?: string; // Tipo de preenchimento (ex: "Valor fixo", "Referência", etc)
+}
+
 export interface AutomationAction {
   id: number;
   name: string;
   type: string;
-  parameters?: Record<string, any>;
+  parameters?: AutomationActionParameter[];
   description?: string;
 }
 
