@@ -16,7 +16,7 @@ export const AutomationsPageClient = () => {
   };
 
   return (
-    <div className='flex-1 overflow-hidden flex flex-col'>
+    <div className='flex-1 min-h-full overflow-hidden flex flex-col'>
       {/* Header */}
       <div className='bg-zinc-50 px-3 pt-3'>
         <h1 className='text-2xl font-bold text-zinc-800'>Automações</h1>

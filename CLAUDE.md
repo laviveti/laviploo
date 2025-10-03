@@ -296,6 +296,7 @@ perf(dashboard): otimizar carregamento de dados
 - **Sem ponto**: Não terminar com ponto final
 - **Escopo**: Usar quando aplicável (componente, módulo, etc.)
 - **Breaking Changes**: Usar `!` após o tipo para mudanças que quebram compatibilidade
+- **Sem assinaturas de IA**: Não incluir assinaturas como "Generated with Claude Code" ou "Co-Authored-By: Claude"
 
 ## Diretrizes de Desenvolvimento
 
