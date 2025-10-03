@@ -5,7 +5,6 @@ import { useQueryStates, parseAsString, parseAsInteger } from "nuqs";
 import { AutomationSidebar } from "./automation-sidebar";
 import { AutomationFilters } from "./automation-filters";
 import { AutomationList } from "./automation-list";
-import { GlobalAutomationSearch } from "./global-automation-search";
 import { useAutomationEntityCounts } from "@/hooks/use-automation-entity-counts";
 import { useAutomationNavigationStore } from "@/stores/use-automation-navigation-store";
 import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
@@ -21,7 +20,12 @@ interface AutomationFilters {
   dateTo?: string;
 }
 
-export const AutomationsDashboard = () => {
+interface AutomationsDashboardProps {
+  globalSearch?: string;
+  selectedAutomation?: SearchResult | null;
+}
+
+export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: AutomationsDashboardProps) => {
   // Estado local original (funcionava)
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "generic" | null>("all");
@@ -94,41 +98,43 @@ export const AutomationsDashboard = () => {
   };
 
   // Handle automation selection from global search
-  const handleAutomationSelect = async (automation: SearchResult) => {
-    // Atualizar contexto primeiro
-    if (automation.entityId === null) {
-      // Automação genérica -> ir para aba "Genéricas"
-      setSelectedEntityId(null);
-      setSelectedFilter("generic");
-    } else {
-      // Automação específica -> ir para a entidade correspondente
-      setSelectedEntityId(automation.entityId);
-      setSelectedFilter("all");
-    }
+  useEffect(() => {
+    if (!selectedAutomation) return;
 
-    // Sempre limpar filtros para garantir que a automação seja visível
-    setFilters({});
+    const navigateToAutomation = async () => {
+      // Atualizar contexto primeiro
+      if (selectedAutomation.entityId === null) {
+        setSelectedEntityId(null);
+        setSelectedFilter("generic");
+      } else {
+        setSelectedEntityId(selectedAutomation.entityId);
+        setSelectedFilter("all");
+      }
 
-    // Buscar em qual página a automação está (com filtros vazios)
-    const result = await findPage({
-      automationId: automation.id,
-      visualEntityId: automation.entityId,
-      perPage,
-      // Usar filtros vazios para garantir que encontramos a automação
-      status: undefined,
-      search: undefined,
-      createdBy: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-      generic: automation.entityId === null ? true : undefined,
-    });
+      // Sempre limpar filtros para garantir que a automação seja visível
+      setFilters({});
 
-    if (result) {
-      // Navegar para a página correta e setar target para highlight
-      setQueryState({ page: result.page });
-      setTargetAutomation(automation.id, automation.entityId, false, false);
-    }
-  };
+      // Buscar em qual página a automação está
+      const result = await findPage({
+        automationId: selectedAutomation.id,
+        visualEntityId: selectedAutomation.entityId,
+        perPage,
+        status: undefined,
+        search: undefined,
+        createdBy: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        generic: selectedAutomation.entityId === null ? true : undefined,
+      });
+
+      if (result) {
+        setQueryState({ page: result.page });
+        setTargetAutomation(selectedAutomation.id, selectedAutomation.entityId, false, false);
+      }
+    };
+
+    navigateToAutomation();
+  }, [selectedAutomation, findPage, perPage, setQueryState, setTargetAutomation]);
 
   // Fetch entity counts
   const { data: entityCountsData, isLoading: isLoadingCounts } = useAutomationEntityCounts();
@@ -177,7 +183,7 @@ export const AutomationsDashboard = () => {
   }
 
   return (
-    <div className='h-full flex border bg-zinc-50'>
+    <div className='h-full flex bg-zinc-50'>
       {/* Sidebar de Entidades */}
       <AutomationSidebar
         selectedEntityId={selectedEntityId}
@@ -191,18 +197,6 @@ export const AutomationsDashboard = () => {
 
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
-        {/* Global Search */}
-        <div className='bg-white border-b border-zinc-200 p-3'>
-          <div className='flex items-center justify-between mb-3'>
-            <h1 className='text-xl font-semibold text-zinc-900'>Automações</h1>
-          </div>
-          <GlobalAutomationSearch
-            onAutomationSelect={handleAutomationSelect}
-            placeholder='Busque automações em qualquer lugar...'
-            className='max-w-md'
-          />
-        </div>
-
         {/* Filtros Contextuais */}
         <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} />
 
