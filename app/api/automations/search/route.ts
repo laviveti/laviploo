@@ -142,7 +142,6 @@ function transformPloomesAutomation(
       id: action.Id,
       name: action.Name,
       type: action.TypeId?.toString() || "unknown",
-      parameters: action.Parameters,
     })),
     description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
     // Pipeline/Stage information

@@ -31,6 +31,7 @@ const getTriangleColor = (contentClassName?: string, triangleClassName?: string)
       "bg-blue-500": "fill-blue-500 stroke-blue-500",
       "bg-amber-500": "fill-amber-500 stroke-amber-500",
       "bg-gray-800": "fill-gray-800 stroke-gray-800",
+      "bg-zinc-600": "fill-zinc-600 stroke-zinc-600",
       "bg-zinc-800": "fill-zinc-800 stroke-zinc-800",
     };
 
@@ -53,7 +54,7 @@ export const Hint: React.FC<HintProps> = ({
   triangleClassName,
   sideOffset = 5,
   delayDuration = 50,
-  open
+  open,
 }) => {
   return (
     <TooltipPrimitive.Provider delayDuration={delayDuration}>
@@ -84,10 +85,10 @@ export const Hint: React.FC<HintProps> = ({
                       "left-1/2 top-full -mt-0.5 -translate-x-1/2 rotate-180": side === "top",
                       "bottom-full left-1/2 -mb-0.5 -translate-x-1/2": side === "bottom",
                     },
-                    getTriangleColor(contentClassName, triangleClassName)
+                    getTriangleColor(contentClassName)
                   )}
                 />
-                <p className={cn("rounded-xs !bg-rose-400 px-1 py-0.5 text-xs font-medium text-white")}>{content}</p>
+                <p className={cn("rounded-xs bg-rose-400 px-1 py-0.5 text-xs font-medium text-white", contentClassName)}>{content}</p>
               </div>
             ) : (
               content
@@ -111,7 +112,7 @@ export const HelpHint: React.FC<HelpHintProps> = ({
   iconClassName,
   sideOffset,
   delayDuration,
-  open
+  open,
 }) => {
   return (
     <Hint

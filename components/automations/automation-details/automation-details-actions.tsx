@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Zap } from "lucide-react";
 import type { Automation } from "@/types/automations";
 import { getActionTypeName } from "@/lib/ploomes-actions-translator";
+import { Hint } from "@/components/system/hint";
 
 interface AutomationDetailsActionsProps {
   automation: Automation;
@@ -79,9 +80,15 @@ export const AutomationDetailsActions = ({ automation }: AutomationDetailsAction
                             <div className='truncate max-w-[150px]'>{param.fillType || "Valor fixo"}</div>
                           </td>
                           <td className='px-3 py-2'>
-                            <code className='text-xs bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-700 inline-block max-w-[350px] line-clamp-2 align-middle'>
-                              {param.value || "-"}
-                            </code>
+                            <Hint
+                              contentClassName='z-50 -m-0.5 text-xs rounded-xs px-1.5 max-w-90'
+                              align='start'
+                              side='bottom'
+                              content={param.value || "-"}>
+                              <code className='text-xs bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-700 inline-block max-w-[350px] truncate align-middle'>
+                                {param.value || "-"}
+                              </code>
+                            </Hint>
                           </td>
                         </tr>
                       ))}

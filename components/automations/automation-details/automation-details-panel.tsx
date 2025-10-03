@@ -10,7 +10,7 @@ import { AutomationDetailsTrigger } from "./automation-details-trigger";
 import { AutomationDetailsActions } from "./automation-details-actions";
 import { AutomationDetailsHistory } from "./automation-details-history";
 import { AutomationDetailsMetadata } from "./automation-details-metadata";
-import { FilterSection } from "./filter-section";
+import { AutomationDetailsFilterSection } from "./automation-details-filter-section";
 
 interface AutomationDetailsPanelProps {
   automationId: number | null;
@@ -73,7 +73,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
             <div className='space-y-6 py-6'>
               <AutomationDetailsTrigger automation={automation} />
 
-              <FilterSection automation={automation} />
+              <AutomationDetailsFilterSection automation={automation} />
 
               <AutomationDetailsActions automation={automation} />
 
