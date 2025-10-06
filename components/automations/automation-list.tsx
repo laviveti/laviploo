@@ -105,7 +105,7 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: Aut
                 </p>
                 {automation.stageName && (
                   <p className='text-xs text-zinc-500 line-clamp-1 *:font-semibold'>
-                    Inserida no estágio: <span className='text-lavive'>{automation.stageName}</span>
+                    Inserida no estágio: <span className='text-zinc-800'>{automation.stageName}</span>
                   </p>
                 )}
               </div>

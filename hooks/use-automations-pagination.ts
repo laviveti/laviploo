@@ -1,18 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useQueryStates, parseAsInteger, parseAsString } from "nuqs";
+import { useQueryStates, parseAsInteger } from "nuqs";
 import type { AutomationsData, Automation } from "@/types/automations";
+import type { AutomationFilters } from "@/types/filters";
 
 const PER_PAGE_OPTIONS = [10, 20, 30, 40] as const;
 
-interface AutomationsFilters {
+interface AutomationsFiltersExtended extends AutomationFilters {
   entityId?: number | null;
-  status?: string;
-  search?: string;
-  createdBy?: string;
-  dateFrom?: string;
-  dateTo?: string;
   generic?: boolean;
 }
 
@@ -33,7 +29,7 @@ async function fetchAutomationsPage({
 }: {
   page: number;
   perPage: number;
-  filters?: AutomationsFilters;
+  filters?: AutomationsFiltersExtended;
 }): Promise<AutomationPaginationData> {
   const searchParams = new URLSearchParams();
 
@@ -70,6 +66,20 @@ async function fetchAutomationsPage({
     searchParams.set('generic', 'true');
   }
 
+  // Ordenação
+  if (filters.sortBy) {
+    searchParams.set('sortBy', filters.sortBy);
+  }
+
+  if (filters.sortOrder) {
+    searchParams.set('sortOrder', filters.sortOrder);
+  }
+
+  // Match types para busca
+  if (filters.matchTypes && filters.matchTypes.length > 0) {
+    searchParams.set('matchTypes', filters.matchTypes.join(','));
+  }
+
   // Sempre expandir para ter dados completos
   searchParams.set('expand', 'true');
 
@@ -99,7 +109,7 @@ async function fetchAutomationsPage({
   };
 }
 
-export function useAutomationsPagination(filters: AutomationsFilters = {}) {
+export function useAutomationsPagination(filters: AutomationsFiltersExtended = {}) {
 
   // Gerencia apenas page e perPage via URL usando nuqs
   const [{ page, perPage }, setPaginationState] = useQueryStates({
@@ -120,6 +130,9 @@ export function useAutomationsPagination(filters: AutomationsFilters = {}) {
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
     generic: filters.generic,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    matchTypes: filters.matchTypes,
   });
 
   const queryResult = useQuery<AutomationPaginationData>({

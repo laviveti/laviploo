@@ -10,15 +10,8 @@ import { useAutomationNavigationStore } from "@/stores/use-automation-navigation
 import { useFindAutomationPage } from "@/hooks/use-find-automation-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResult } from "@/types/automations";
+import type { AutomationFilters as Filters } from "@/types/filters";
 import { getEntityDisplayName } from "@/constants/automation-entities";
-
-interface AutomationFilters {
-  search?: string;
-  status?: string;
-  createdBy?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
 
 interface AutomationsDashboardProps {
   globalSearch?: string;
@@ -29,7 +22,7 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
   // Estado local original (funcionava)
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "generic" | null>("all");
-  const [filters, setFilters] = useState<AutomationFilters>({});
+  const [filters, setFilters] = useState<Filters>({});
 
   // Zustand store for navigation
   const setTargetAutomation = useAutomationNavigationStore((state) => state.setTargetAutomation);
@@ -198,7 +191,7 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
         {/* Filtros Contextuais */}
-        {/* <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} /> */}
+        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} />
 
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>
