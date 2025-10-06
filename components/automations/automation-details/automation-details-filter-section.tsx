@@ -81,7 +81,9 @@ export const AutomationDetailsFilterSection = ({ automation }: FilterSectionProp
                         <div className='truncate max-w-[120px]'>{criterion.entity || "Workflow"}</div>
                       </td>
                       <td className='px-3 py-2 text-zinc-700 font-medium'>
-                        <div className='truncate max-w-[180px]'>{criterion.field}</div>
+                        <Hint contentClassName='z-50 -m-0.5 text-xs rounded-xs px-1.5 max-w-90' align='start' side='bottom' content={criterion.field}>
+                          <div className='truncate max-w-[180px]'>{criterion.field}</div>
+                        </Hint>
                       </td>
                       <td className='px-3 py-2 text-zinc-600'>
                         <div className='truncate max-w-[120px]'>{criterion.operation}</div>

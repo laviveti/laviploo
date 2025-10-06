@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
-import type {
-  Automation,
-  PloomesAutomationsResponse,
-  PloomesAutomation,
-  AutomationTriggerType,
-  AutomationStatus,
-  AutomationEntityType,
-} from "@/types/automations";
+import type { Automation, PloomesAutomationsResponse } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
+import { transformPloomesAutomation, calculateMatchScore } from "@/lib/automations";
 import { normalizeText } from "@/lib/utils";
-import { getVisualEntityId, getEntityDisplayName } from "@/constants/automation-entities";
 
-// Export types for use in other files
+// ============================================================================
+// Types
+// ============================================================================
+
 export type SearchResult = Automation & {
   matchedFields: string[];
   matchedContent: string;
@@ -49,108 +45,19 @@ export interface PloomesStageResponse {
   }>;
 }
 
+// ============================================================================
+// Constants
+// ============================================================================
+
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
   "User-Key": process.env.PLOOMES_API_KEY!,
   Accept: "application/json",
 };
 
-// Helper functions for data transformation
-function mapTriggerType(triggerId: number): AutomationTriggerType {
-  const triggerMap: Record<number, AutomationTriggerType> = {
-    1: "stage_entry",
-    2: "stage_exit",
-    5: "deal_created",
-    6: "deal_updated",
-    8: "deal_won",
-    9: "deal_lost",
-    17: "recurring",
-  };
-  return triggerMap[triggerId] || "unknown";
-}
-
-function mapAutomationStatus(automation: PloomesAutomation): AutomationStatus {
-  if (automation.DisabledDueToError) return "error";
-  if (!automation.Enabled) return "inactive";
-  return "active";
-}
-
-function mapEntityType(entityId: number): AutomationEntityType {
-  const entityMap: Record<number, AutomationEntityType> = {
-    1: "contacts",
-    2: "deals",
-    3: "tasks",
-    4: "orders",
-  };
-  return entityMap[entityId] || "unknown";
-}
-
-// REMOVIDA: função local getEntityName() - agora usa getEntityDisplayName() do constants
-
-function getTriggerName(triggerId: number): string {
-  const triggerNames: Record<number, string> = {
-    1: "Ao entrar no estágio",
-    2: "Ao sair do estágio",
-    5: "Ao criar",
-    6: "Ao alterar",
-    8: "Ao ganhar",
-    9: "Ao perder",
-    17: "Recorrente",
-  };
-  return triggerNames[triggerId] || `Trigger ${triggerId}`;
-}
-
-function transformPloomesAutomation(
-  ploomesAutomation: PloomesAutomation,
-  pipelinesMap: Record<number, string> = {},
-  stagesMap: Record<number, { name: string; pipelineId: number }> = {}
-): Automation {
-  // Get pipeline and stage information
-  let pipelineName: string | undefined;
-  let stageName: string | undefined;
-
-  if (ploomesAutomation.TriggerDealStageId && stagesMap) {
-    const stageInfo = stagesMap[ploomesAutomation.TriggerDealStageId];
-    if (stageInfo) {
-      stageName = stageInfo.name;
-      if (pipelinesMap) {
-        pipelineName = pipelinesMap[stageInfo.pipelineId];
-      }
-    }
-  } else if (ploomesAutomation.TriggerDealPipelineId && pipelinesMap) {
-    pipelineName = pipelinesMap[ploomesAutomation.TriggerDealPipelineId];
-  }
-
-  // Calcular ID visual correto baseado no EntityId do Ploomes + contexto
-  const visualEntityId = getVisualEntityId(ploomesAutomation.EntityId, !!ploomesAutomation.TriggerDealStageId);
-
-  return {
-    id: ploomesAutomation.Id,
-    name: ploomesAutomation.Name,
-    entityId: visualEntityId, // IMPORTANTE: Retorna ID visual, não EntityId do Ploomes
-    entityName: getEntityDisplayName(visualEntityId), // Usa função do constants para mapeamento correto
-    triggerId: ploomesAutomation.TriggerId,
-    triggerName: getTriggerName(ploomesAutomation.TriggerId),
-    triggerType: mapTriggerType(ploomesAutomation.TriggerId),
-    status: mapAutomationStatus(ploomesAutomation),
-    enabled: ploomesAutomation.Enabled,
-    hasError: ploomesAutomation.DisabledDueToError,
-    createdAt: ploomesAutomation.CreateDate,
-    lastRun: ploomesAutomation.LastRunTime || undefined,
-    creator: ploomesAutomation.Creator?.Name,
-    actions: ploomesAutomation.Actions?.map((action) => ({
-      id: action.Id,
-      name: action.Name,
-      type: action.TypeId?.toString() || "unknown",
-    })),
-    description: ploomesAutomation.TriggerDealStageId ? `Estágio específico: ${ploomesAutomation.TriggerDealStageId}` : undefined,
-    // Pipeline/Stage information
-    triggerDealStageId: ploomesAutomation.TriggerDealStageId,
-    triggerDealPipelineId: ploomesAutomation.TriggerDealPipelineId,
-    pipelineName,
-    stageName,
-  };
-}
+// ============================================================================
+// Main Handler
+// ============================================================================
 
 export async function GET(request: Request): Promise<NextResponse<GlobalSearchResponse | { error: string }>> {
   try {
@@ -161,46 +68,22 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       return NextResponse.json({ results: [], total: 0, query: query || "" });
     }
 
-    // Split query into individual terms for multi-term search
     const searchTerms = query.split(/\s+/).filter((term) => term.length > 0);
 
-    // Debug log para verificar os termos de busca
-
-    // Escape single quotes for OData
-    const escapedQuery = query.replace(/'/g, "''");
-
-    // Otimização: Para queries longas (>80 chars) ou muitos termos (>5), buscar apenas pela query completa
-    // Para evitar queries OData muito longas que podem falhar
-    const useFullQueryOnly = query.length > 80 || searchTerms.length > 5;
-
-    // Buscar todas as automações para aplicar filtro insensível a acentos no lado do servidor
-    // Aumentado limite para 500 para incluir automações mais antigas
+    // Buscar todas as automações e dados de contexto
     const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$top=500&$orderby=CreateDate desc`;
 
-    // Fetch context data in parallel
     const [automationsResponse, pipelinesResponse, stagesResponse, usersResponse] = await Promise.allSettled([
-      fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, {
-        headers,
-        cache: "no-cache",
-      }),
-      fetch(`${PLOOMES_API_BASE}/Deals@Pipelines`, {
-        headers,
-        cache: "no-cache",
-      }),
-      fetch(`${PLOOMES_API_BASE}/Deals@Stages`, {
-        headers,
-        cache: "no-cache",
-      }),
-      fetch(`${PLOOMES_API_BASE}/Users?$top=100`, {
-        headers,
-        cache: "no-cache",
-      }),
+      fetch(`${PLOOMES_API_BASE}/${automationsQuery}`, { headers, cache: "no-cache" }),
+      fetch(`${PLOOMES_API_BASE}/Deals@Pipelines`, { headers, cache: "no-cache" }),
+      fetch(`${PLOOMES_API_BASE}/Deals@Stages`, { headers, cache: "no-cache" }),
+      fetch(`${PLOOMES_API_BASE}/Users?$top=200`, { headers, cache: "no-cache" }),
     ]);
 
-    // Process context data
-    let pipelinesMap: Record<number, string> = {};
-    let stagesMap: Record<number, { name: string; pipelineId: number }> = {};
-    let usersMap: Record<number, string> = {};
+    // Processar dados de contexto
+    const pipelinesMap: Record<number, string> = {};
+    const stagesMap: Record<number, { name: string; pipelineId: number }> = {};
+    const usersMap: Record<number, string> = {};
 
     if (pipelinesResponse.status === "fulfilled" && pipelinesResponse.value.ok) {
       const pipelinesData: PloomesPipelineResponse = await pipelinesResponse.value.json();
@@ -226,92 +109,144 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       });
     }
 
-    // Helper function to calculate match score with accent-insensitive matching
-    const calculateMatchScore = (text: string, terms: string[], isTitle: boolean = false): number => {
-      if (!text) return 0;
-      const normalizedText = normalizeText(text);
-      let score = 0;
+    // Parsear automações
+    let automationsData: PloomesAutomationsResponse | null = null;
+    if (automationsResponse.status === "fulfilled" && automationsResponse.value.ok) {
+      automationsData = await automationsResponse.value.json();
+    }
 
-      // Count how many terms are found in the text
-      terms.forEach((term) => {
-        const normalizedTerm = normalizeText(term);
-        if (normalizedText.includes(normalizedTerm)) {
-          // Título tem peso 3x maior para priorizar matches no nome
-          const weight = isTitle ? 3 : 1;
-          score += weight;
-          // Debug log para verificar matches
+    // Cache de filtros (buscar sob demanda)
+    const filtersMap: Record<number, any> = {};
+    const fetchedFilterIds = new Set<number>();
+
+    async function fetchFilter(filterId: number) {
+      if (fetchedFilterIds.has(filterId)) return;
+      fetchedFilterIds.add(filterId);
+
+      try {
+        const response = await fetch(
+          `${PLOOMES_API_BASE}/Filters?$filter=Id eq ${filterId}&$expand=Fields($expand=Values)&$top=1`,
+          { headers, cache: "no-cache" }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.value && data.value.length > 0) {
+            filtersMap[filterId] = data.value[0];
+          }
         }
-      });
-
-      return score;
-    };
+      } catch (error) {
+        // Ignorar erros
+      }
+    }
 
     const results: SearchResult[] = [];
 
-    if (automationsResponse.status === "fulfilled" && automationsResponse.value.ok) {
-      const data: PloomesAutomationsResponse = await automationsResponse.value.json();
-
-      data.value?.forEach((automation) => {
+    if (automationsData) {
+      // Primeira passagem: calcular scores básicos
+      const automationsWithScores = automationsData.value?.map((automation) => {
         const transformedAutomation = transformPloomesAutomation(automation, pipelinesMap, stagesMap);
 
-        // Calculate match score for each field - título tem prioridade
-        const nameScore = calculateMatchScore(automation.Name || "", searchTerms, true); // Título tem prioridade
-        const creatorScore = calculateMatchScore(automation.Creator?.Name || "", searchTerms);
-        const pipelineScore = calculateMatchScore(transformedAutomation.pipelineName || "", searchTerms);
-        const stageScore = calculateMatchScore(transformedAutomation.stageName || "", searchTerms);
-        const entityScore = calculateMatchScore(transformedAutomation.entityName || "", searchTerms); // Agora usa nome correto do constants
-        const triggerScore = calculateMatchScore(transformedAutomation.triggerName || "", searchTerms);
+        return {
+          automation,
+          transformedAutomation,
+          nameScore: calculateMatchScore(automation.Name || "", searchTerms, true),
+          creatorScore: calculateMatchScore(automation.Creator?.Name || "", searchTerms),
+          pipelineScore: calculateMatchScore(transformedAutomation.pipelineName || "", searchTerms),
+          stageScore: calculateMatchScore(transformedAutomation.stageName || "", searchTerms),
+          entityScore: calculateMatchScore(transformedAutomation.entityName || "", searchTerms),
+          triggerScore: calculateMatchScore(transformedAutomation.triggerName || "", searchTerms),
+        };
+      });
 
+      // Coletar filtros necessários
+      const filterIdsToFetch = new Set<number>();
+      automationsWithScores?.forEach((item) => {
+        const hasBasicScore =
+          item.nameScore > 0 ||
+          item.creatorScore > 0 ||
+          item.pipelineScore > 0 ||
+          item.stageScore > 0 ||
+          item.entityScore > 0;
+
+        if (hasBasicScore && item.automation.TriggerFilterId) {
+          filterIdsToFetch.add(item.automation.TriggerFilterId);
+        }
+      });
+
+      // Buscar filtros em lotes de 5
+      const filterIdsArray = Array.from(filterIdsToFetch);
+      for (let i = 0; i < filterIdsArray.length; i += 5) {
+        const batch = filterIdsArray.slice(i, i + 5);
+        await Promise.all(batch.map((filterId) => fetchFilter(filterId)));
+      }
+
+      // Segunda passagem: processar com todos os dados
+      for (const item of automationsWithScores || []) {
+        const { automation, transformedAutomation, nameScore, creatorScore, pipelineScore, stageScore, entityScore, triggerScore } =
+          item;
+
+        // Buscar em filtros (gatilhos)
+        let filterScore = 0;
+        const filter = automation.TriggerFilterId ? filtersMap[automation.TriggerFilterId] : null;
+
+        if (filter?.Fields) {
+          filterScore += calculateMatchScore(filter.Name || "", searchTerms);
+
+          filter.Fields.forEach((field: any) => {
+            filterScore += calculateMatchScore(field.FieldName || "", searchTerms);
+
+            field.Values?.forEach((value: any) => {
+              if (value.StringValue) filterScore += calculateMatchScore(value.StringValue, searchTerms);
+              if (value.BigStringValue) filterScore += calculateMatchScore(value.BigStringValue, searchTerms);
+
+              if (value.IntegerValue) {
+                const resolvedValue =
+                  usersMap[value.IntegerValue] || pipelinesMap[value.IntegerValue] || stagesMap[value.IntegerValue]?.name;
+                if (resolvedValue) filterScore += calculateMatchScore(resolvedValue, searchTerms);
+              }
+            });
+          });
+        }
+
+        // Buscar em ações e seus parâmetros
         let actionsScore = 0;
         let actionParametersScore = 0;
+
         automation.Actions?.forEach((action) => {
           actionsScore += calculateMatchScore(action.Name || "", searchTerms);
-
-          // Buscar em parâmetros simples das ações
           actionParametersScore += calculateMatchScore(action.ObjectValueName || "", searchTerms);
           actionParametersScore += calculateMatchScore(action.StringValue || "", searchTerms);
           actionParametersScore += calculateMatchScore(action.BigStringValue || "", searchTerms);
 
-          // Buscar em RequestBody (contém dados estruturados de tarefas, emails, etc)
           if (action.RequestBody) {
             try {
               const requestBodyData = JSON.parse(action.RequestBody);
-
-              // Buscar em campos textuais do RequestBody
               actionParametersScore += calculateMatchScore(requestBodyData.Title || "", searchTerms);
               actionParametersScore += calculateMatchScore(requestBodyData.Description || "", searchTerms);
 
-              // Buscar em usuários designados
-              if (requestBodyData.Users && Array.isArray(requestBodyData.Users)) {
-                requestBodyData.Users.forEach((user: any) => {
-                  actionParametersScore += calculateMatchScore(user.Name || "", searchTerms);
-                });
-              }
+              requestBodyData.Users?.forEach((user: any) => {
+                actionParametersScore += calculateMatchScore(user.Name || "", searchTerms);
+              });
 
-              // Buscar em contatos mencionados
-              if (requestBodyData.Contacts && Array.isArray(requestBodyData.Contacts)) {
-                requestBodyData.Contacts.forEach((contact: any) => {
-                  actionParametersScore += calculateMatchScore(contact.Name || contact.display || "", searchTerms);
-                });
-              }
+              requestBodyData.Contacts?.forEach((contact: any) => {
+                actionParametersScore += calculateMatchScore(contact.Name || contact.display || "", searchTerms);
+              });
             } catch (e) {
               // Ignorar erros de parsing
             }
           }
         });
 
-        const totalScore = nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + actionsScore + actionParametersScore;
+        const totalScore =
+          nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + filterScore + actionsScore + actionParametersScore;
 
-        // Only include results that match at least one term
-        if (totalScore === 0) return;
+        if (totalScore === 0) continue;
 
-        // Determine which fields matched
+        // Construir matched fields e content
         const matchedFields: string[] = [];
         let matchedContent = "";
 
-        const lowerQuery = query.toLowerCase();
-
-        // Check for matches (keeping original logic for display)
         if (nameScore > 0) {
           matchedFields.push("nome");
           matchedContent = automation.Name || "";
@@ -347,6 +282,49 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           matchedContent += `Gatilho: ${transformedAutomation.triggerName}`;
         }
 
+        if (filterScore > 0 && filter) {
+          const filterMatches: string[] = [];
+
+          if (filter.Name && calculateMatchScore(filter.Name, searchTerms) > 0) {
+            filterMatches.push(filter.Name);
+          }
+
+          filter.Fields?.forEach((field: any) => {
+            const fieldMatches: string[] = [];
+
+            if (field.FieldName && calculateMatchScore(field.FieldName, searchTerms) > 0) {
+              fieldMatches.push(field.FieldName);
+            }
+
+            field.Values?.forEach((value: any) => {
+              if (value.StringValue && calculateMatchScore(value.StringValue, searchTerms) > 0) {
+                fieldMatches.push(value.StringValue);
+              }
+              if (value.BigStringValue && calculateMatchScore(value.BigStringValue, searchTerms) > 0) {
+                fieldMatches.push(value.BigStringValue);
+              }
+
+              if (value.IntegerValue) {
+                const resolvedValue =
+                  usersMap[value.IntegerValue] || pipelinesMap[value.IntegerValue] || stagesMap[value.IntegerValue]?.name;
+                if (resolvedValue && calculateMatchScore(resolvedValue, searchTerms) > 0) {
+                  fieldMatches.push(resolvedValue);
+                }
+              }
+            });
+
+            if (fieldMatches.length > 0) {
+              filterMatches.push(`${field.FieldName}: ${fieldMatches.join(", ")}`);
+            }
+          });
+
+          if (filterMatches.length > 0) {
+            matchedFields.push("filtro");
+            if (matchedContent) matchedContent += ` • `;
+            matchedContent += `Filtro: ${filterMatches.join("; ")}`;
+          }
+        }
+
         if (actionsScore > 0) {
           automation.Actions?.forEach((action) => {
             if (calculateMatchScore(action.Name || "", searchTerms) > 0) {
@@ -357,12 +335,10 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           });
         }
 
-        // Verificar matches em parâmetros das ações (disparos)
         if (actionParametersScore > 0) {
           automation.Actions?.forEach((action) => {
             const parameterMatches: string[] = [];
 
-            // Parâmetros simples
             if (action.ObjectValueName && calculateMatchScore(action.ObjectValueName, searchTerms) > 0) {
               parameterMatches.push(action.ObjectValueName);
             }
@@ -373,12 +349,10 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
               parameterMatches.push(action.BigStringValue);
             }
 
-            // RequestBody
             if (action.RequestBody) {
               try {
                 const requestBodyData = JSON.parse(action.RequestBody);
 
-                // Buscar em campos textuais
                 if (requestBodyData.Title && calculateMatchScore(requestBodyData.Title, searchTerms) > 0) {
                   parameterMatches.push(`Título: ${requestBodyData.Title}`);
                 }
@@ -386,24 +360,18 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
                   parameterMatches.push(`Descrição: ${requestBodyData.Description}`);
                 }
 
-                // Buscar em usuários
-                if (requestBodyData.Users && Array.isArray(requestBodyData.Users)) {
-                  requestBodyData.Users.forEach((user: any) => {
-                    if (user.Name && calculateMatchScore(user.Name, searchTerms) > 0) {
-                      parameterMatches.push(`Usuário: ${user.Name}`);
-                    }
-                  });
-                }
+                requestBodyData.Users?.forEach((user: any) => {
+                  if (user.Name && calculateMatchScore(user.Name, searchTerms) > 0) {
+                    parameterMatches.push(`Usuário: ${user.Name}`);
+                  }
+                });
 
-                // Buscar em contatos
-                if (requestBodyData.Contacts && Array.isArray(requestBodyData.Contacts)) {
-                  requestBodyData.Contacts.forEach((contact: any) => {
-                    const contactName = contact.Name || contact.display || "";
-                    if (contactName && calculateMatchScore(contactName, searchTerms) > 0) {
-                      parameterMatches.push(`Contato: ${contactName}`);
-                    }
-                  });
-                }
+                requestBodyData.Contacts?.forEach((contact: any) => {
+                  const contactName = contact.Name || contact.display || "";
+                  if (contactName && calculateMatchScore(contactName, searchTerms) > 0) {
+                    parameterMatches.push(`Contato: ${contactName}`);
+                  }
+                });
               } catch (e) {
                 // Ignorar erros de parsing
               }
@@ -427,50 +395,42 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           matchedContent,
           score: totalScore,
         } as SearchResult & { score: number });
-      });
+      }
 
-      // Sort by score (higher score = more terms matched)
       results.sort((a: any, b: any) => b.score - a.score);
     }
 
-    // Additional search in pipeline/stage names if no results found in automations
+    // Busca adicional por pipeline/stage se não houver resultados
     if (results.length === 0) {
-      // Search for automations that might be related to matching pipelines/stages
-      const pipelineMatches = Object.entries(pipelinesMap).filter(([_, name]) => name.toLowerCase().includes(query.toLowerCase()));
-
-      const stageMatches = Object.entries(stagesMap).filter(([_, stage]) => stage.name.toLowerCase().includes(query.toLowerCase()));
+      const normalizedQuery = normalizeText(query);
+      const pipelineMatches = Object.entries(pipelinesMap).filter(([_, name]) => normalizeText(name).includes(normalizedQuery));
+      const stageMatches = Object.entries(stagesMap).filter(([_, stage]) => normalizeText(stage.name).includes(normalizedQuery));
 
       if (pipelineMatches.length > 0 || stageMatches.length > 0) {
-        // Build additional query for pipeline/stage related automations
         const pipelineIds = pipelineMatches.map(([id, _]) => `TriggerDealPipelineId eq ${id}`);
         const stageIds = stageMatches.map(([id, _]) => `TriggerDealStageId eq ${id}`);
-
         const additionalConditions = [...pipelineIds, ...stageIds];
 
         if (additionalConditions.length > 0) {
           const additionalQuery = `Automations?$expand=Creator,Actions,Entity&$filter=${additionalConditions.join(" or ")}&$top=20&$orderby=CreateDate desc`;
 
           try {
-            const additionalResponse = await fetch(`${PLOOMES_API_BASE}/${additionalQuery}`, {
-              headers,
-              cache: "no-cache",
-            });
+            const additionalResponse = await fetch(`${PLOOMES_API_BASE}/${additionalQuery}`, { headers, cache: "no-cache" });
 
             if (additionalResponse.ok) {
               const additionalData: PloomesAutomationsResponse = await additionalResponse.json();
 
               additionalData.value?.forEach((automation) => {
                 const transformedAutomation = transformPloomesAutomation(automation, pipelinesMap, stagesMap);
-
                 const matchedFields: string[] = [];
                 let matchedContent = transformedAutomation.name;
 
-                if (transformedAutomation.pipelineName?.toLowerCase().includes(query.toLowerCase())) {
+                if (transformedAutomation.pipelineName && normalizeText(transformedAutomation.pipelineName).includes(normalizedQuery)) {
                   matchedFields.push("pipeline");
                   matchedContent = `Pipeline: ${transformedAutomation.pipelineName}`;
                 }
 
-                if (transformedAutomation.stageName?.toLowerCase().includes(query.toLowerCase())) {
+                if (transformedAutomation.stageName && normalizeText(transformedAutomation.stageName).includes(normalizedQuery)) {
                   matchedFields.push("estágio");
                   matchedContent = `Estágio: ${transformedAutomation.stageName}`;
                 }
@@ -479,7 +439,7 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
                   ...transformedAutomation,
                   matchedFields,
                   matchedContent,
-                  score: 1, // Score mínimo para resultados de busca adicional
+                  score: 1,
                 } as SearchResult & { score: number });
               });
             }
@@ -490,12 +450,12 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       }
     }
 
-    // Remove duplicates, sort by score, and limit results
+    // Remover duplicados e limitar resultados
     const uniqueResults = results
       .filter((result, index, self) => index === self.findIndex((r) => r.id === result.id))
       .sort((a, b) => ((b as any).score || 0) - ((a as any).score || 0))
       .slice(0, 20)
-      .map(({ score, ...result }: any) => result as SearchResult); // Remove score property from final results
+      .map(({ score, ...result }: any) => result as SearchResult);
 
     return NextResponse.json({
       results: uniqueResults,

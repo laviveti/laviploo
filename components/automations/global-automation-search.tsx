@@ -325,10 +325,11 @@ export function GlobalAutomationSearch({
                                 key={`${field}-${index}`}
                                 variant='secondary'
                                 className={cn(
-                                  "text-xs px-1.5 py-0 h-4 animate-pulse bg-rose-50 text-rose-700 border-rose-200",
+                                  "text-xs px-1.5 py-0 h-4 animate-pulse",
                                   field === "gatilho" && "bg-blue-50 text-blue-700 border-blue-200",
                                   field === "filtro" && "bg-orange-50 text-orange-700 border-orange-200",
-                                  field === "disparo" && "bg-purple-50 text-purple-700 border-purple-200"
+                                  field === "disparo" && "bg-purple-50 text-purple-700 border-purple-200",
+                                  field !== "gatilho" && field !== "filtro" && field !== "disparo" && "bg-rose-50 text-rose-700 border-rose-200"
                                 )}>
                                 {field}
                               </Badge>

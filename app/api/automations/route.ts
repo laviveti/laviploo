@@ -6,9 +6,6 @@ import type {
   IntegrationBehavior,
   PloomesAutomationsResponse,
   PloomesAutomation,
-  AutomationTriggerType,
-  AutomationStatus,
-  AutomationEntityType,
   PloomesIntegrationResponse,
   PloomesBehaviorResponse,
   PloomesMailChimpResponse,
@@ -18,37 +15,13 @@ import type {
 import { getErrorMessage } from "@/lib/handle-error";
 import { normalizeText } from "@/lib/utils";
 import { getEntityDisplayName } from "@/constants/automation-entities";
-import { getTriggerName as getPloomestriggerName } from "@/lib/ploomes-mappings";
+import { mapTriggerType, mapAutomationStatus, getTriggerName } from "@/lib/automations";
 
 const PLOOMES_API_BASE = process.env.PLOOMES_API_URL || "https://api2.ploomes.com";
 const headers = {
   "User-Key": process.env.PLOOMES_API_KEY!,
   Accept: "application/json",
 };
-
-// Helper functions for data transformation
-function mapTriggerType(triggerId: number): AutomationTriggerType {
-  const triggerMap: Record<number, AutomationTriggerType> = {
-    1: "stage_entry",
-    2: "stage_exit",
-    5: "deal_created",
-    6: "deal_updated",
-    8: "deal_won",
-    9: "deal_lost",
-    17: "recurring",
-  };
-  return triggerMap[triggerId] || "unknown";
-}
-
-function mapAutomationStatus(automation: PloomesAutomation): AutomationStatus {
-  if (automation.DisabledDueToError) return "error";
-  if (!automation.Enabled) return "inactive";
-  return "active";
-}
-
-function getTriggerName(triggerId: number): string {
-  return getPloomestriggerName(triggerId);
-}
 
 // DEPRECATED: Use getEntityDisplayName from constants/automation-entities
 function getEntityName(entityId: number): string {

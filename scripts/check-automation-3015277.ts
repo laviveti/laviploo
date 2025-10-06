@@ -23,7 +23,7 @@ async function checkAutomation() {
     const url = `${PLOOMES_API_BASE}/Automations?$expand=Actions,Creator,Entity&$filter=Id eq 3015277`;
     const response = await fetch(url, {
       headers: {
-        "User-Key": PLOOMES_API_KEY,
+        "User-Key": PLOOMES_API_KEY!,
         "Content-Type": "application/json",
       },
       cache: "no-cache",

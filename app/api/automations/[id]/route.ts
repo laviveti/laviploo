@@ -3,15 +3,13 @@ import type {
   PloomesAutomationsResponse,
   PloomesAutomation,
   Automation,
-  AutomationTriggerType,
-  AutomationStatus,
   FilterCondition,
   AutomationExecution,
 } from "@/types/automations";
 import { getErrorMessage } from "@/lib/handle-error";
+import { mapTriggerType, mapAutomationStatus, getTriggerName } from "@/lib/automations";
 import {
   getEntityName,
-  getTriggerName,
   interpretFilterField,
   groupFilterCriteria,
   analyzeFilterLogic,
@@ -63,25 +61,6 @@ const REFERENCE_FIELD_ENDPOINTS: Record<string, { endpoint: string; nameField: s
   productid: { endpoint: "Products", nameField: "Name" },
 };
 
-// Helper functions (duplicated from main route for now)
-function mapTriggerType(triggerId: number): AutomationTriggerType {
-  const triggerMap: Record<number, AutomationTriggerType> = {
-    1: "stage_entry",
-    2: "stage_exit",
-    5: "deal_created",
-    6: "deal_updated",
-    8: "deal_won",
-    9: "deal_lost",
-    17: "recurring",
-  };
-  return triggerMap[triggerId] || "unknown";
-}
-
-function mapAutomationStatus(automation: PloomesAutomation): AutomationStatus {
-  if (automation.DisabledDueToError) return "error";
-  if (!automation.Enabled) return "inactive";
-  return "active";
-}
 
 /**
  * Busca o nome real de uma referência (User, Pipeline, etc) pelo ID
