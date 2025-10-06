@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import type { SearchResult, GlobalSearchResponse } from "@/app/api/automations/search/route";
 
@@ -59,6 +59,7 @@ export function useGlobalAutomationSearch(
     minQueryLength = 2,
   } = options;
 
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState<string>('');
   const debouncedQuery = useDebounce(query.trim(), debounceMs);
 
@@ -74,14 +75,18 @@ export function useGlobalAutomationSearch(
     queryKey: ['global-automation-search', debouncedQuery],
     queryFn: () => fetchGlobalSearch(debouncedQuery),
     enabled: shouldFetch,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 0, // Sem cache - sempre buscar
     gcTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const clearSearch = useCallback(() => {
     setQuery('');
-  }, []);
+    // Limpar cache apenas quando explicitamente solicitado
+    queryClient.removeQueries({ queryKey: ['global-automation-search'] });
+  }, [queryClient]);
 
   return {
     results: data?.results || [],

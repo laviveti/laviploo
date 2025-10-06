@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 
 interface AutomationPaginationListProps {
   entityId?: number | null;
-  status?: string;
+  status?: "all" | "active" | "inactive" | "error";
   search?: string;
   createdBy?: string;
   dateFrom?: string;
@@ -120,16 +120,17 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: Aut
                   </span>
                 )}
                 {automation.creator && (
-                  <span className='flex items-center gap-1'>
+                  <span className='flex ml-2 items-center gap-1'>
                     <User className='h-3 w-3' />
                     {automation.creator}
                   </span>
                 )}
-                <span className='flex items-center gap-1'>
+                <span className='flex items-center ml-2 gap-1' title='Data de criação'>
                   <Calendar className='h-3 w-3' />
                   {new Date(automation.createdAt).toLocaleDateString("pt-BR", {
                     day: "2-digit",
                     month: "2-digit",
+                    year: "2-digit",
                   })}
                 </span>
               </div>

@@ -14,7 +14,18 @@ export function calculateMatchScore(text: string, terms: string[], isTitle: bool
 
   terms.forEach((term) => {
     const normalizedTerm = normalizeText(term);
-    if (normalizedText.includes(normalizedTerm)) {
+
+    // Para termos muito curtos (1-2 chars), buscar início de palavras
+    let matched = false;
+    if (term.length <= 2) {
+      const words = normalizedText.split(/\s+/);
+      matched = words.some((word) => word.startsWith(normalizedTerm));
+    } else {
+      // Para termos normais, buscar substring
+      matched = normalizedText.includes(normalizedTerm);
+    }
+
+    if (matched) {
       const weight = isTitle ? 3 : 1;
       score += weight;
     }

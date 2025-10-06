@@ -68,7 +68,19 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
       return NextResponse.json({ results: [], total: 0, query: query || "" });
     }
 
-    const searchTerms = query.split(/\s+/).filter((term) => term.length > 0);
+    // Lista de palavras comuns para ignorar (artigos, preposições, etc)
+    const stopWords = new Set(["de", "da", "do", "das", "dos", "a", "o", "e", "para", "com", "em", "no", "na"]);
+
+    // Filtrar termos: remover palavras muito comuns, mas manter termos significativos (mesmo curtos)
+    const allTerms = query.split(/\s+/).filter((term) => term.length > 0);
+    const searchTerms = allTerms.filter((term) => {
+      // Manter termos com 3+ caracteres
+      if (term.length >= 3) return true;
+      // Remover palavras muito comuns de 1-2 caracteres
+      if (stopWords.has(term.toLowerCase())) return false;
+      // Manter termos curtos que NÃO são stop words (podem ser iniciais como "N" de "NOVO")
+      return true;
+    });
 
     // Buscar todas as automações e dados de contexto
     const automationsQuery = `Automations?$expand=Creator,Actions,Entity&$top=500&$orderby=CreateDate desc`;
@@ -143,25 +155,44 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
     const results: SearchResult[] = [];
 
     if (automationsData) {
-      // Primeira passagem: calcular scores básicos
+      // Primeira passagem: calcular scores básicos com pesos diferenciados
       const automationsWithScores = automationsData.value?.map((automation) => {
         const transformedAutomation = transformPloomesAutomation(automation, pipelinesMap, stagesMap);
 
+        // Pesos: nome (x10), criador (x3), entidade (x5), pipeline (x4), estágio (x4), gatilho (x2)
         return {
           automation,
           transformedAutomation,
-          nameScore: calculateMatchScore(automation.Name || "", searchTerms, true),
-          creatorScore: calculateMatchScore(automation.Creator?.Name || "", searchTerms),
-          pipelineScore: calculateMatchScore(transformedAutomation.pipelineName || "", searchTerms),
-          stageScore: calculateMatchScore(transformedAutomation.stageName || "", searchTerms),
-          entityScore: calculateMatchScore(transformedAutomation.entityName || "", searchTerms),
-          triggerScore: calculateMatchScore(transformedAutomation.triggerName || "", searchTerms),
+          nameScore: calculateMatchScore(automation.Name || "", searchTerms, true) * 10,
+          creatorScore: calculateMatchScore(automation.Creator?.Name || "", searchTerms) * 3,
+          pipelineScore: calculateMatchScore(transformedAutomation.pipelineName || "", searchTerms) * 4,
+          stageScore: calculateMatchScore(transformedAutomation.stageName || "", searchTerms) * 4,
+          entityScore: calculateMatchScore(transformedAutomation.entityName || "", searchTerms) * 5,
+          triggerScore: calculateMatchScore(transformedAutomation.triggerName || "", searchTerms) * 2,
         };
       });
 
-      // Coletar filtros necessários
+      // Coletar todos os filtros para busca (primeira passagem - pré-filtro leve)
       const filterIdsToFetch = new Set<number>();
       automationsWithScores?.forEach((item) => {
+        // Pré-filtro: verificar se PELO MENOS UM termo aparece no nome ou criador
+        const quickMatch = searchTerms.some((term) => {
+          const normalizedTerm = normalizeText(term);
+          const quickText = normalizeText(
+            [
+              item.automation.Name,
+              item.automation.Creator?.Name,
+              item.transformedAutomation.pipelineName,
+              item.transformedAutomation.stageName,
+              item.transformedAutomation.entityName,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          );
+          return quickText.includes(normalizedTerm);
+        });
+
+        // Se passou no pré-filtro OU tem score básico, incluir filtro
         const hasBasicScore =
           item.nameScore > 0 ||
           item.creatorScore > 0 ||
@@ -169,15 +200,22 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           item.stageScore > 0 ||
           item.entityScore > 0;
 
-        if (hasBasicScore && item.automation.TriggerFilterId) {
+        if ((quickMatch || hasBasicScore) && item.automation.TriggerFilterId) {
           filterIdsToFetch.add(item.automation.TriggerFilterId);
+        }
+
+        // Sempre incluir automações com ações (para buscar em disparos)
+        if (item.automation.Actions && item.automation.Actions.length > 0) {
+          if (item.automation.TriggerFilterId) {
+            filterIdsToFetch.add(item.automation.TriggerFilterId);
+          }
         }
       });
 
-      // Buscar filtros em lotes de 5
+      // Buscar filtros em lotes de 10 (aumentado de 5)
       const filterIdsArray = Array.from(filterIdsToFetch);
-      for (let i = 0; i < filterIdsArray.length; i += 5) {
-        const batch = filterIdsArray.slice(i, i + 5);
+      for (let i = 0; i < filterIdsArray.length; i += 10) {
+        const batch = filterIdsArray.slice(i, i + 10);
         await Promise.all(batch.map((filterId) => fetchFilter(filterId)));
       }
 
@@ -186,51 +224,51 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
         const { automation, transformedAutomation, nameScore, creatorScore, pipelineScore, stageScore, entityScore, triggerScore } =
           item;
 
-        // Buscar em filtros (gatilhos)
+        // Buscar em filtros (gatilhos) - peso x3
         let filterScore = 0;
         const filter = automation.TriggerFilterId ? filtersMap[automation.TriggerFilterId] : null;
 
         if (filter?.Fields) {
-          filterScore += calculateMatchScore(filter.Name || "", searchTerms);
+          filterScore += calculateMatchScore(filter.Name || "", searchTerms) * 3;
 
           filter.Fields.forEach((field: any) => {
-            filterScore += calculateMatchScore(field.FieldName || "", searchTerms);
+            filterScore += calculateMatchScore(field.FieldName || "", searchTerms) * 2;
 
             field.Values?.forEach((value: any) => {
-              if (value.StringValue) filterScore += calculateMatchScore(value.StringValue, searchTerms);
-              if (value.BigStringValue) filterScore += calculateMatchScore(value.BigStringValue, searchTerms);
+              if (value.StringValue) filterScore += calculateMatchScore(value.StringValue, searchTerms) * 3;
+              if (value.BigStringValue) filterScore += calculateMatchScore(value.BigStringValue, searchTerms) * 3;
 
               if (value.IntegerValue) {
                 const resolvedValue =
                   usersMap[value.IntegerValue] || pipelinesMap[value.IntegerValue] || stagesMap[value.IntegerValue]?.name;
-                if (resolvedValue) filterScore += calculateMatchScore(resolvedValue, searchTerms);
+                if (resolvedValue) filterScore += calculateMatchScore(resolvedValue, searchTerms) * 3;
               }
             });
           });
         }
 
-        // Buscar em ações e seus parâmetros
+        // Buscar em ações e seus parâmetros - peso x2 para ações, x4 para parâmetros importantes
         let actionsScore = 0;
         let actionParametersScore = 0;
 
         automation.Actions?.forEach((action) => {
-          actionsScore += calculateMatchScore(action.Name || "", searchTerms);
-          actionParametersScore += calculateMatchScore(action.ObjectValueName || "", searchTerms);
-          actionParametersScore += calculateMatchScore(action.StringValue || "", searchTerms);
-          actionParametersScore += calculateMatchScore(action.BigStringValue || "", searchTerms);
+          actionsScore += calculateMatchScore(action.Name || "", searchTerms) * 2;
+          actionParametersScore += calculateMatchScore(action.ObjectValueName || "", searchTerms) * 3;
+          actionParametersScore += calculateMatchScore(action.StringValue || "", searchTerms) * 3;
+          actionParametersScore += calculateMatchScore(action.BigStringValue || "", searchTerms) * 3;
 
           if (action.RequestBody) {
             try {
               const requestBodyData = JSON.parse(action.RequestBody);
-              actionParametersScore += calculateMatchScore(requestBodyData.Title || "", searchTerms);
-              actionParametersScore += calculateMatchScore(requestBodyData.Description || "", searchTerms);
+              actionParametersScore += calculateMatchScore(requestBodyData.Title || "", searchTerms) * 4;
+              actionParametersScore += calculateMatchScore(requestBodyData.Description || "", searchTerms) * 2;
 
               requestBodyData.Users?.forEach((user: any) => {
-                actionParametersScore += calculateMatchScore(user.Name || "", searchTerms);
+                actionParametersScore += calculateMatchScore(user.Name || "", searchTerms) * 5;
               });
 
               requestBodyData.Contacts?.forEach((contact: any) => {
-                actionParametersScore += calculateMatchScore(contact.Name || contact.display || "", searchTerms);
+                actionParametersScore += calculateMatchScore(contact.Name || contact.display || "", searchTerms) * 5;
               });
             } catch (e) {
               // Ignorar erros de parsing
@@ -238,10 +276,101 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           }
         });
 
+        // Calcular score total e bonificar múltiplos matches
         const totalScore =
           nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + filterScore + actionsScore + actionParametersScore;
 
         if (totalScore === 0) continue;
+
+        // Construir texto completo com TODOS os campos pesquisados para cálculo de densidade
+        const allSearchableText: string[] = [
+          automation.Name,
+          automation.Creator?.Name,
+          transformedAutomation.pipelineName,
+          transformedAutomation.stageName,
+          transformedAutomation.entityName,
+          transformedAutomation.triggerName,
+        ];
+
+        // Adicionar textos de filtros
+        if (filter?.Fields) {
+          allSearchableText.push(filter.Name);
+          filter.Fields.forEach((field: any) => {
+            allSearchableText.push(field.FieldName);
+            field.Values?.forEach((value: any) => {
+              if (value.StringValue) allSearchableText.push(value.StringValue);
+              if (value.BigStringValue) allSearchableText.push(value.BigStringValue);
+              if (value.IntegerValue) {
+                const resolvedValue =
+                  usersMap[value.IntegerValue] || pipelinesMap[value.IntegerValue] || stagesMap[value.IntegerValue]?.name;
+                if (resolvedValue) allSearchableText.push(resolvedValue);
+              }
+            });
+          });
+        }
+
+        // Adicionar textos de ações e parâmetros
+        automation.Actions?.forEach((action) => {
+          allSearchableText.push(action.Name);
+          allSearchableText.push(action.ObjectValueName);
+          allSearchableText.push(action.StringValue);
+          allSearchableText.push(action.BigStringValue);
+
+          if (action.RequestBody) {
+            try {
+              const requestBodyData = JSON.parse(action.RequestBody);
+              allSearchableText.push(requestBodyData.Title);
+              allSearchableText.push(requestBodyData.Description);
+
+              requestBodyData.Users?.forEach((user: any) => {
+                allSearchableText.push(user.Name);
+              });
+
+              requestBodyData.Contacts?.forEach((contact: any) => {
+                allSearchableText.push(contact.Name || contact.display);
+              });
+            } catch (e) {
+              // Ignorar erros de parsing
+            }
+          }
+        });
+
+        // Bônus por densidade: quantos termos de busca foram encontrados
+        const fullText = normalizeText(allSearchableText.filter(Boolean).join(" "));
+
+        // Contar matches - para termos de 1-2 caracteres, buscar palavras que comecem com esses caracteres
+        const matchedTermsCount = searchTerms.filter((term) => {
+          const normalizedTerm = normalizeText(term);
+
+          // Para termos muito curtos (1-2 chars), buscar início de palavras
+          if (term.length <= 2) {
+            const words = fullText.split(/\s+/);
+            return words.some((word) => word.startsWith(normalizedTerm));
+          }
+
+          // Para termos normais, buscar substring
+          return fullText.includes(normalizedTerm);
+        }).length;
+
+        // Calcular porcentagem de termos encontrados
+        const matchPercentage = searchTerms.length > 0 ? matchedTermsCount / searchTerms.length : 0;
+
+        // Bônus de densidade progressivo (curva exponencial favorece resultados mais completos)
+        // 100% match = bônus de 100, 75% = 56, 50% = 25, 25% = 6
+        const densityBonus = Math.pow(matchPercentage, 2) * 100;
+
+        // Bônus extra se todos os termos aparecem no NOME (campo mais importante)
+        const nameText = normalizeText(automation.Name || "");
+        const allInName = searchTerms.every((term) => {
+          const normalizedTerm = normalizeText(term);
+          if (term.length <= 2) {
+            return nameText.split(/\s+/).some((word) => word.startsWith(normalizedTerm));
+          }
+          return nameText.includes(normalizedTerm);
+        });
+        const nameBonus = allInName ? 150 : 0;
+
+        const finalScore = totalScore + densityBonus + nameBonus;
 
         // Construir matched fields e content
         const matchedFields: string[] = [];
@@ -393,7 +522,7 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
           ...transformedAutomation,
           matchedFields,
           matchedContent,
-          score: totalScore,
+          score: finalScore,
         } as SearchResult & { score: number });
       }
 

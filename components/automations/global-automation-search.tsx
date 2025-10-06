@@ -118,17 +118,41 @@ export function GlobalAutomationSearch({
 
   const { history, addToHistory, removeFromHistory } = useSearchHistory();
 
+  const MIN_QUERY_LENGTH = 1;
+  const [isTyping, setIsTyping] = useState(false);
+
   const { results, isLoading, query, setQuery, total, clearSearch } = useGlobalAutomationSearch({
     enabled: isOpen,
     debounceMs: 200,
-    minQueryLength: 1,
+    minQueryLength: MIN_QUERY_LENGTH,
   });
+
+  // Detectar quando usuário está digitando (debounce ativo)
+  useEffect(() => {
+    if (query.length > 0) {
+      setIsTyping(true);
+      const timer = setTimeout(() => {
+        setIsTyping(false);
+      }, 200); // Mesmo tempo do debounce
+
+      return () => clearTimeout(timer);
+    } else {
+      setIsTyping(false);
+    }
+  }, [query]);
 
   useEffect(() => {
     if (results.length > 0 && selectedIndex >= results.length) {
       setSelectedIndex(results.length - 1);
     }
   }, [results.length, selectedIndex]);
+
+  // Reset completo quando o input for esvaziado
+  useEffect(() => {
+    if (query.trim() === '') {
+      setSelectedIndex(-1);
+    }
+  }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) return;
@@ -238,15 +262,15 @@ export function GlobalAutomationSearch({
           ref={resultsRef}
           className='absolute top-full left-0 right-0 mt-2 bg-white rounded-md border border-zinc-200 shadow-xl z-50 max-h-96 overflow-y-auto'>
           {/* Loading State */}
-          {isLoading && (
+          {(isLoading || isTyping) && (
             <div className='p-3 text-center text-sm text-zinc-500'>
               <Bot className='h-4 w-4 mx-auto mb-1 animate-pulse' />
               Buscando automações...
             </div>
           )}
 
-          {/* No Results - Only show when not loading and there are truly no results */}
-          {!isLoading && query.length > 0 && results.length === 0 && (
+          {/* No Results - Only show when not loading, not typing, and query meets minimum length */}
+          {!isLoading && !isTyping && query.trim().length >= MIN_QUERY_LENGTH && results.length === 0 && (
             <div className='p-3 text-center text-sm text-zinc-500'>
               <Search className='h-4 w-4 mx-auto mb-1 text-zinc-400' />
               Nenhuma automação encontrada para "{query}"
