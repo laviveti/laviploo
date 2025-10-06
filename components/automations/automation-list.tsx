@@ -36,6 +36,7 @@ interface AutomationPaginationListProps {
   dateFrom?: string;
   dateTo?: string;
   generic?: boolean;
+  highlightSearch?: string;
 }
 
 interface AutomationItemProps {
@@ -43,9 +44,41 @@ interface AutomationItemProps {
   onOpenDetails: (automationId: number) => void;
   isHighlighted?: boolean;
   onRef?: (id: number, element: HTMLDivElement | null) => void;
+  highlightTerms?: string[];
 }
 
-const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: AutomationItemProps) => {
+const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef, highlightTerms = [] }: AutomationItemProps) => {
+  // Função para highlight de texto
+  const highlightText = (text: string) => {
+    if (!highlightTerms || highlightTerms.length === 0) return text;
+
+    // Remover stop words comuns
+    const stopWords = new Set(["de", "da", "do", "das", "dos", "a", "o", "e", "para", "com", "em", "no", "na"]);
+    const filteredTerms = highlightTerms.filter((term) => {
+      if (term.length >= 3) return true;
+      if (stopWords.has(term.toLowerCase())) return false;
+      return true;
+    });
+
+    if (filteredTerms.length === 0) return text;
+
+    // Escape special regex characters
+    const escapedTerms = filteredTerms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\\\$&"));
+    const regex = new RegExp(`(${escapedTerms.join("|")})`, "gi");
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      const isMatch = filteredTerms.some((term) => part.toLowerCase() === term.toLowerCase());
+      return isMatch ? (
+        <mark key={index} className="bg-rose-100 text-rose-900 px-0.5 rounded-sm">
+          {part}
+        </mark>
+      ) : (
+        part
+      );
+    });
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -98,31 +131,31 @@ const AutomationItem = ({ automation, onOpenDetails, isHighlighted, onRef }: Aut
           <div className='flex items-start gap-2 min-w-0 flex-1'>
             <MapPin className='h-3 w-3 text-rose-500 mt-0.5 shrink-0' />
             <div className='min-w-0 flex-1'>
-              <h3 className='text-sm font-medium text-zinc-800 mb-1 line-clamp-2'>{automation.name}</h3>
+              <h3 className='text-sm font-medium text-zinc-800 mb-1 line-clamp-2'>{highlightText(automation.name)}</h3>
               <div className='flex items-center mb-2 gap-4'>
                 <p className='text-xs text-zinc-500'>
                   <code className='font-semibold text-zinc-800'>ID: {automation.id}</code>
                 </p>
                 {automation.stageName && (
                   <p className='text-xs text-zinc-500 line-clamp-1 *:font-semibold'>
-                    Inserida no estágio: <span className='text-zinc-800'>{automation.stageName}</span>
+                    Inserida no estágio: <span className='text-zinc-800'>{highlightText(automation.stageName)}</span>
                   </p>
                 )}
               </div>
               <div className='flex flex-wrap items-center gap-1 text-xs text-zinc-500'>
                 <Badge variant='outline' className='text-xs px-1 py-0 rounded-sm'>
-                  {automation.triggerName}
+                  {automation.triggerName ? highlightText(automation.triggerName) : automation.triggerName}
                 </Badge>
                 {automation.pipelineName && (
                   <span className='flex items-center gap-1'>
                     <GitBranch className='h-3 w-3' />
-                    {automation.pipelineName}
+                    {highlightText(automation.pipelineName)}
                   </span>
                 )}
                 {automation.creator && (
                   <span className='flex ml-2 items-center gap-1'>
                     <User className='h-3 w-3' />
-                    {automation.creator}
+                    {highlightText(automation.creator)}
                   </span>
                 )}
                 <span className='flex items-center ml-2 gap-1' title='Data de criação'>
@@ -225,7 +258,16 @@ const PaginationControls = ({
   );
 };
 
-export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, dateTo, generic }: AutomationPaginationListProps) => {
+export const AutomationList = ({
+  entityId,
+  status,
+  search,
+  createdBy,
+  dateFrom,
+  dateTo,
+  generic,
+  highlightSearch,
+}: AutomationPaginationListProps) => {
   // Details panel state from URL
   const { selectedAutomationId, isOpen: detailsPanelOpen, openDetails, closeDetails } = useAutomationDetailsPanel();
   const [highlightedAutomationId, setHighlightedAutomationId] = useState<number | null>(null);
@@ -235,6 +277,9 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
 
   // Refs for scroll
   const automationRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Processar termos de busca para highlight
+  const highlightTerms = highlightSearch ? highlightSearch.split(/\s+/).filter((term) => term.length > 0) : [];
 
   const handleOpenDetails = useCallback(
     (automationId: number) => {
@@ -387,6 +432,7 @@ export const AutomationList = ({ entityId, status, search, createdBy, dateFrom, 
                 automation={automation}
                 onOpenDetails={handleOpenDetails}
                 isHighlighted={highlightedAutomationId === automation.id}
+                highlightTerms={highlightTerms}
                 onRef={(id, element) => {
                   if (element) {
                     automationRefs.current.set(id, element);

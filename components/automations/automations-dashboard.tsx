@@ -23,6 +23,8 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "generic" | null>("all");
   const [filters, setFilters] = useState<Filters>({});
+  const [persistedGlobalSearch, setPersistedGlobalSearch] = useState<string | undefined>(undefined);
+  const [persistedMatchTypes, setPersistedMatchTypes] = useState<string[] | undefined>(undefined);
 
   // Zustand store for navigation
   const setTargetAutomation = useAutomationNavigationStore((state) => state.setTargetAutomation);
@@ -64,6 +66,9 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
       clearTarget();
       // Reset página para 1 quando mudar de contexto
       setQueryState({ page: 1 });
+      // Limpar busca global persistida ao mudar de contexto
+      setPersistedGlobalSearch(undefined);
+      setPersistedMatchTypes(undefined);
     }
 
     setSelectedEntityId(entityId);
@@ -81,6 +86,9 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
       clearTarget();
       // Reset página para 1 quando mudar de contexto
       setQueryState({ page: 1 });
+      // Limpar busca global persistida ao mudar de contexto
+      setPersistedGlobalSearch(undefined);
+      setPersistedMatchTypes(undefined);
     }
 
     setSelectedFilter(filter);
@@ -95,6 +103,14 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
     if (!selectedAutomation) return;
 
     const navigateToAutomation = async () => {
+      // Persistir dados da busca global
+      if (globalSearch) {
+        setPersistedGlobalSearch(globalSearch);
+      }
+      if (selectedAutomation.matchedFields && selectedAutomation.matchedFields.length > 0) {
+        setPersistedMatchTypes(selectedAutomation.matchedFields);
+      }
+
       // Atualizar contexto primeiro
       if (selectedAutomation.entityId === null) {
         setSelectedEntityId(null);
@@ -127,7 +143,7 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
     };
 
     navigateToAutomation();
-  }, [selectedAutomation, findPage, perPage, setQueryState, setTargetAutomation]);
+  }, [selectedAutomation, globalSearch, findPage, perPage, setQueryState, setTargetAutomation]);
 
   // Fetch entity counts
   const { data: entityCountsData, isLoading: isLoadingCounts } = useAutomationEntityCounts();
@@ -191,7 +207,13 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
         {/* Filtros Contextuais */}
-        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} />
+        <AutomationFilters
+          onFiltersChange={setFilters}
+          selectedEntityName={selectedEntityName}
+          filters={filters}
+          globalSearch={persistedGlobalSearch}
+          globalMatchTypes={persistedMatchTypes as any}
+        />
 
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>
@@ -203,6 +225,7 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
             dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
             generic={selectedFilter === "generic"}
+            highlightSearch={persistedGlobalSearch}
           />
         </div>
       </div>

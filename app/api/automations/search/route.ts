@@ -283,14 +283,14 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
         if (totalScore === 0) continue;
 
         // Construir texto completo com TODOS os campos pesquisados para cálculo de densidade
-        const allSearchableText: string[] = [
-          automation.Name,
-          automation.Creator?.Name,
-          transformedAutomation.pipelineName,
-          transformedAutomation.stageName,
-          transformedAutomation.entityName,
-          transformedAutomation.triggerName,
-        ];
+        const allSearchableText: string[] = [];
+
+        if (automation.Name) allSearchableText.push(automation.Name);
+        if (automation.Creator?.Name) allSearchableText.push(automation.Creator.Name);
+        if (transformedAutomation.pipelineName) allSearchableText.push(transformedAutomation.pipelineName);
+        if (transformedAutomation.stageName) allSearchableText.push(transformedAutomation.stageName);
+        if (transformedAutomation.entityName) allSearchableText.push(transformedAutomation.entityName);
+        if (transformedAutomation.triggerName) allSearchableText.push(transformedAutomation.triggerName);
 
         // Adicionar textos de filtros
         if (filter?.Fields) {
@@ -311,10 +311,10 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
 
         // Adicionar textos de ações e parâmetros
         automation.Actions?.forEach((action) => {
-          allSearchableText.push(action.Name);
-          allSearchableText.push(action.ObjectValueName);
-          allSearchableText.push(action.StringValue);
-          allSearchableText.push(action.BigStringValue);
+          if (action.Name) allSearchableText.push(action.Name);
+          if (action.ObjectValueName) allSearchableText.push(action.ObjectValueName);
+          if (action.StringValue) allSearchableText.push(action.StringValue);
+          if (action.BigStringValue) allSearchableText.push(action.BigStringValue);
 
           if (action.RequestBody) {
             try {
