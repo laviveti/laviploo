@@ -263,11 +263,44 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
         const triggerScore = calculateMatchScore(transformedAutomation.triggerName || "", searchTerms);
 
         let actionsScore = 0;
+        let actionParametersScore = 0;
         automation.Actions?.forEach((action) => {
           actionsScore += calculateMatchScore(action.Name || "", searchTerms);
+
+          // Buscar em parâmetros simples das ações
+          actionParametersScore += calculateMatchScore(action.ObjectValueName || "", searchTerms);
+          actionParametersScore += calculateMatchScore(action.StringValue || "", searchTerms);
+          actionParametersScore += calculateMatchScore(action.BigStringValue || "", searchTerms);
+
+          // Buscar em RequestBody (contém dados estruturados de tarefas, emails, etc)
+          if (action.RequestBody) {
+            try {
+              const requestBodyData = JSON.parse(action.RequestBody);
+
+              // Buscar em campos textuais do RequestBody
+              actionParametersScore += calculateMatchScore(requestBodyData.Title || "", searchTerms);
+              actionParametersScore += calculateMatchScore(requestBodyData.Description || "", searchTerms);
+
+              // Buscar em usuários designados
+              if (requestBodyData.Users && Array.isArray(requestBodyData.Users)) {
+                requestBodyData.Users.forEach((user: any) => {
+                  actionParametersScore += calculateMatchScore(user.Name || "", searchTerms);
+                });
+              }
+
+              // Buscar em contatos mencionados
+              if (requestBodyData.Contacts && Array.isArray(requestBodyData.Contacts)) {
+                requestBodyData.Contacts.forEach((contact: any) => {
+                  actionParametersScore += calculateMatchScore(contact.Name || contact.display || "", searchTerms);
+                });
+              }
+            } catch (e) {
+              // Ignorar erros de parsing
+            }
+          }
         });
 
-        const totalScore = nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + actionsScore;
+        const totalScore = nameScore + creatorScore + pipelineScore + stageScore + entityScore + triggerScore + actionsScore + actionParametersScore;
 
         // Only include results that match at least one term
         if (totalScore === 0) return;
@@ -320,6 +353,66 @@ export async function GET(request: Request): Promise<NextResponse<GlobalSearchRe
               matchedFields.push("ação");
               if (matchedContent) matchedContent += ` • `;
               matchedContent += `Ação: ${action.Name}`;
+            }
+          });
+        }
+
+        // Verificar matches em parâmetros das ações (disparos)
+        if (actionParametersScore > 0) {
+          automation.Actions?.forEach((action) => {
+            const parameterMatches: string[] = [];
+
+            // Parâmetros simples
+            if (action.ObjectValueName && calculateMatchScore(action.ObjectValueName, searchTerms) > 0) {
+              parameterMatches.push(action.ObjectValueName);
+            }
+            if (action.StringValue && calculateMatchScore(action.StringValue, searchTerms) > 0) {
+              parameterMatches.push(action.StringValue);
+            }
+            if (action.BigStringValue && calculateMatchScore(action.BigStringValue, searchTerms) > 0) {
+              parameterMatches.push(action.BigStringValue);
+            }
+
+            // RequestBody
+            if (action.RequestBody) {
+              try {
+                const requestBodyData = JSON.parse(action.RequestBody);
+
+                // Buscar em campos textuais
+                if (requestBodyData.Title && calculateMatchScore(requestBodyData.Title, searchTerms) > 0) {
+                  parameterMatches.push(`Título: ${requestBodyData.Title}`);
+                }
+                if (requestBodyData.Description && calculateMatchScore(requestBodyData.Description, searchTerms) > 0) {
+                  parameterMatches.push(`Descrição: ${requestBodyData.Description}`);
+                }
+
+                // Buscar em usuários
+                if (requestBodyData.Users && Array.isArray(requestBodyData.Users)) {
+                  requestBodyData.Users.forEach((user: any) => {
+                    if (user.Name && calculateMatchScore(user.Name, searchTerms) > 0) {
+                      parameterMatches.push(`Usuário: ${user.Name}`);
+                    }
+                  });
+                }
+
+                // Buscar em contatos
+                if (requestBodyData.Contacts && Array.isArray(requestBodyData.Contacts)) {
+                  requestBodyData.Contacts.forEach((contact: any) => {
+                    const contactName = contact.Name || contact.display || "";
+                    if (contactName && calculateMatchScore(contactName, searchTerms) > 0) {
+                      parameterMatches.push(`Contato: ${contactName}`);
+                    }
+                  });
+                }
+              } catch (e) {
+                // Ignorar erros de parsing
+              }
+            }
+
+            if (parameterMatches.length > 0) {
+              matchedFields.push("disparo");
+              if (matchedContent) matchedContent += ` • `;
+              matchedContent += `Disparo: ${parameterMatches.join(", ")}`;
             }
           });
         }

@@ -320,11 +320,16 @@ export function GlobalAutomationSearch({
                         {/* Matched Fields Tags with pulse animation */}
                         {automation.matchedFields.length > 0 && (
                           <div className='flex flex-wrap gap-1 mt-1'>
-                            {automation.matchedFields.map((field) => (
+                            {automation.matchedFields.map((field, index) => (
                               <Badge
-                                key={field}
+                                key={`${field}-${index}`}
                                 variant='secondary'
-                                className='text-xs px-1.5 py-0 h-4 bg-rose-50 text-rose-700 border-rose-200 animate-pulse'>
+                                className={cn(
+                                  "text-xs px-1.5 py-0 h-4 animate-pulse bg-rose-50 text-rose-700 border-rose-200",
+                                  field === "gatilho" && "bg-blue-50 text-blue-700 border-blue-200",
+                                  field === "filtro" && "bg-orange-50 text-orange-700 border-orange-200",
+                                  field === "disparo" && "bg-purple-50 text-purple-700 border-purple-200"
+                                )}>
                                 {field}
                               </Badge>
                             ))}

@@ -37,7 +37,7 @@ export const AutomationDetailsHistory = ({ automation }: AutomationDetailsHistor
     <Card className='border-zinc-200'>
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-800'>
-          <History className='h-4 w-4 text-purple-600' />
+          <History className='h-4 w-4 text-zinc-600' />
           Histórico de Execuções
         </CardTitle>
       </CardHeader>

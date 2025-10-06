@@ -23,7 +23,7 @@ export const AutomationDetailsActions = ({ automation }: AutomationDetailsAction
       <Card className='border-zinc-200'>
         <CardHeader className='pb-3'>
           <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-800'>
-            <Zap className='h-4 w-4 text-orange-600' />
+            <Zap className='h-4 w-4 text-purple-600' />
             Disparos
           </CardTitle>
         </CardHeader>
@@ -38,7 +38,7 @@ export const AutomationDetailsActions = ({ automation }: AutomationDetailsAction
     <Card className='border-zinc-200'>
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-sm font-medium text-zinc-800'>
-          <Zap className='h-4 w-4 text-orange-600' />
+          <Zap className='h-4 w-4 text-purple-600' />
           {getCardName(automation.actions?.length || 0)}
         </CardTitle>
       </CardHeader>
