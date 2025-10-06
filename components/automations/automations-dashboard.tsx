@@ -198,7 +198,7 @@ export const AutomationsDashboard = ({ globalSearch, selectedAutomation }: Autom
       {/* Conteúdo Principal */}
       <div className='flex-1 flex flex-col min-h-0'>
         {/* Filtros Contextuais */}
-        <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} />
+        {/* <AutomationFilters onFiltersChange={setFilters} selectedEntityName={selectedEntityName} filters={filters} /> */}
 
         {/* Lista de Automações */}
         <div className='flex-1 overflow-hidden bg-white'>

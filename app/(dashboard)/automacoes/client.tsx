@@ -34,7 +34,7 @@ export const AutomationsPageClient = () => {
           <div className='bg-zinc-50 px-3 pb-2'>
             <TabsList>
               <TabsTrigger value='todas'>Todas</TabsTrigger>
-              <TabsTrigger value='usuario'>Por Usuário</TabsTrigger>
+              <TabsTrigger value='usuario'>Por usuário</TabsTrigger>
             </TabsList>
           </div>
 

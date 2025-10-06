@@ -33,7 +33,12 @@ export const AutomationDetailsMetadata = ({ automation }: AutomationDetailsMetad
           )}
 
           <div className='flex justify-between'>
-            <span className='text-zinc-600'>Criado em:</span>
+            <span className='text-zinc-600'>Autor:</span>
+            <span className='text-zinc-800'>{automation.creator}</span>
+          </div>
+
+          <div className='flex justify-between'>
+            <span className='text-zinc-600'>Data de criação:</span>
             <span className='text-zinc-800'>{formatDate(automation.createdAt)}</span>
           </div>
 

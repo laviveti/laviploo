@@ -23,7 +23,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='w-full p-4 sm:max-w-4xl overflow-y-auto'>
+      <SheetContent className='w-full gap-2 px-4 py-8 sm:max-w-4xl overflow-y-auto'>
         {/* Loading state */}
         {isLoading && (
           <>
@@ -65,7 +65,7 @@ export const AutomationDetailsPanel = ({ automationId, open, onOpenChange }: Aut
         {/* Success state */}
         {automation && !isLoading && !error && (
           <>
-            <SheetTitle className='text-lg py-1 font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
+            <SheetTitle className='text-xl py-0 font-semibold text-zinc-900 leading-tight'>{automation.name}</SheetTitle>
             <SheetHeader className='border-b p-0 pb-4'>
               <AutomationDetailsHeader automation={automation} />
             </SheetHeader>
