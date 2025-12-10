@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build --turbopack",
-    "dev": "next dev --turbopack",
+    "dev": "next dev --port 3001 --turbopack",
     "lint": "eslint",
     "shadcn:add": "pnpm dlx shadcn add",
     "start": "next start",
