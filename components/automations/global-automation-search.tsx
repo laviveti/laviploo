@@ -133,7 +133,7 @@ export function GlobalAutomationSearch({
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 200); // Mesmo tempo do debounce
+      }, 400); // Maior que o debounce para garantir que isLoading seja ativado
 
       return () => clearTimeout(timer);
     } else {
